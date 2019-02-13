@@ -10,10 +10,16 @@ With a working [Golang](https://golang.org/doc/install) environment do:
 go get github.com/triggermesh/aktion
 ```
 
-### Support
+## Usage
+
+```
+aktion parser -f main.workflow
+```
+
+## Support
 
 We would love your feedback on this CLI tool so don't hesitate to let us know what is wrong and how we could improve it, just file an [issue](https://github.com/triggermesh/aktion/issues/new)
 
-### Code of Conduct
+## Code of Conduct
 
 This plugin is by no means part of [CNCF](https://www.cncf.io/) but we abide by its [code of conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md)
