@@ -26,6 +26,7 @@ import (
 var (
 	version  string
 	filename string
+	outputType string
 )
 
 var aktionCmd = &cobra.Command{
@@ -34,10 +35,14 @@ var aktionCmd = &cobra.Command{
 	Version: version,
 }
 
+func Panic(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	os.Exit(1)
+}
+
 func Execute() {
 	if err := aktionCmd.Execute(); err != nil {
-		fmt.Printf("Error: %s\n", err)
-		os.Exit(1)
+		Panic("Error: %s\n", err)
 	}
 }
 
@@ -53,8 +58,9 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	aktionCmd.PersistentFlags().StringVarP(&filename, "filename", "f", "main.workflow", "Github Action Workflow File")
+	aktionCmd.PersistentFlags().StringVarP(&outputType, "outputType", "o", "json", "Output type for the results (json|yaml)")
 	aktionCmd.AddCommand(versionCmd)
-	aktionCmd.AddCommand(NewParserCmd(&filename))
+	aktionCmd.AddCommand(NewParserCmd(&filename, &outputType))
 }
 
 func initConfig() {
