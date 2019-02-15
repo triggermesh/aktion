@@ -16,51 +16,14 @@ limitations under the License.
 
 package cmd
 
-import (
-	"encoding/json"
-	"fmt"
-	"os"
+import "github.com/spf13/cobra"
 
-	"github.com/actions/workflow-parser/parser"
-	"github.com/spf13/cobra"
-    "gopkg.in/yaml.v2"
-)
-
-func NewParserCmd(filename *string, outputType *string) *cobra.Command {
-	parserCmd := &cobra.Command{
+func NewParserCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "parser",
 		Short: "Parse the workflow into a JSON file",
 		Run: func(cmd *cobra.Command, args []string) {
-			f, err := os.Open(*filename)
-			var output []byte
-
-			if err != nil {
-				Panic("Error opening file: %s\n", err)
-			}
-
-			config, err := parser.Parse(f)
-			if err != nil {
-				Panic("Error parsing file: %s\n", err)
-			}
-			f.Close()
-
-			if (*outputType == "json") {
-				output, err = json.MarshalIndent(config, "", "  ")
-				if err != nil {
-					Panic("Error generating JSON output: %s\n", err)
-				}
-			} else if (*outputType == "yaml") {
-				output, err = yaml.Marshal(config)
-				if err != nil {
-					Panic("Error generating YAML output: %s\n", err)
-				}
-			} else {
-				Panic("Unsupported format: %s. Expect json or yaml\n", *outputType)
-			}
-
-			fmt.Printf("%s\n", output)
+			GenerateOutput(ParseData())
 		},
 	}
-
-	return parserCmd
 }

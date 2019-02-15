@@ -17,15 +17,18 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/actions/workflow-parser/parser"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var (
-	version  string
-	filename string
+	version    string
+	filename   string
 	outputType string
 )
 
@@ -38,6 +41,43 @@ var aktionCmd = &cobra.Command{
 func Panic(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, args...)
 	os.Exit(1)
+}
+
+func GenerateOutput(data interface{}) {
+	var output []byte
+	var err error
+
+	if outputType == "json" {
+		output, err = json.MarshalIndent(data, "", "  ")
+		if err != nil {
+			Panic("Error generating JSON output: %s\n", err)
+		}
+	} else if outputType == "yaml" {
+		output, err = yaml.Marshal(data)
+		if err != nil {
+			Panic("Error generating YAML output: %s\n", err)
+		}
+	} else {
+		Panic("Unsupported format: %s. Expect json or yaml\n", outputType)
+	}
+
+	fmt.Printf("%s\n", output)
+}
+
+func ParseData() interface{} {
+	f, err := os.Open(filename)
+
+	if err != nil {
+		Panic("Error opening file: %s\n", err)
+	}
+
+	config, err := parser.Parse(f)
+	if err != nil {
+		Panic("Error parsing file: %s\n", err)
+	}
+	f.Close()
+
+	return config
 }
 
 func Execute() {
@@ -58,9 +98,9 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	aktionCmd.PersistentFlags().StringVarP(&filename, "filename", "f", "main.workflow", "Github Action Workflow File")
-	aktionCmd.PersistentFlags().StringVarP(&outputType, "outputType", "o", "json", "Output type for the results (json|yaml)")
+	aktionCmd.PersistentFlags().StringVarP(&outputType, "outputType", "o", "yaml", "Output type for the results (json|yaml)")
 	aktionCmd.AddCommand(versionCmd)
-	aktionCmd.AddCommand(NewParserCmd(&filename, &outputType))
+	aktionCmd.AddCommand(NewParserCmd())
 }
 
 func initConfig() {
