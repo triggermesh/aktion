@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/actions/workflow-parser/model"
 	"github.com/actions/workflow-parser/parser"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -64,7 +65,7 @@ func GenerateOutput(data interface{}) {
 	fmt.Printf("%s\n", output)
 }
 
-func ParseData() interface{} {
+func ParseData() *model.Configuration {
 	f, err := os.Open(filename)
 
 	if err != nil {
@@ -101,6 +102,7 @@ func init() {
 	aktionCmd.PersistentFlags().StringVarP(&outputType, "outputType", "o", "yaml", "Output type for the results (json|yaml)")
 	aktionCmd.AddCommand(versionCmd)
 	aktionCmd.AddCommand(NewParserCmd())
+	aktionCmd.AddCommand(NewPipelineCmd())
 }
 
 func initConfig() {
