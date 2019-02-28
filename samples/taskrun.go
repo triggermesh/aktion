@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -26,8 +27,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//Handler handles events from GpcPubSub source
+//Handler handles events from github source
 func Handler(ctx context.Context) ([]byte, error) {
+
+	taskName := os.Getenv("TASK_NAME")
 
 	tr := v1alpha1.TaskRun{
 		TypeMeta: metav1.TypeMeta{
@@ -35,17 +38,16 @@ func Handler(ctx context.Context) ([]byte, error) {
 			APIVersion: "pipeline.knative.dev/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              "taskname",
+			Name:              taskName + "-run",
 			Namespace:         "default",
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.TaskRunSpec{
 			TaskRef: &v1alpha1.TaskRef{
-				Name: "taskrefname",
+				Name: taskName,
 			},
 			Trigger: v1alpha1.TaskTrigger{
 				Type: v1alpha1.TaskTriggerTypePipelineRun,
-				Name: "testtriggername",
 			},
 		},
 	}
