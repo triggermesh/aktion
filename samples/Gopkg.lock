@@ -160,11 +160,13 @@
   revision = "v0.3.0"
 
 [[projects]]
-  digest = "1:25168353f24741fc40e4b0cbc276760225e8c94de46d9880b0916529e0114f39"
+  digest = "1:28be7399457c4f19698f7975d0f2b3f76ab659567843ebf2ebf992ef8cb7d7a1"
   name = "github.com/knative/build-pipeline"
   packages = [
     "pkg/apis/pipeline",
     "pkg/apis/pipeline/v1alpha1",
+    "pkg/client/clientset/versioned/scheme",
+    "pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
     "pkg/names",
     "pkg/reconciler/v1alpha1/taskrun/list",
     "pkg/reconciler/v1alpha1/templating",
@@ -190,6 +192,14 @@
   ]
   pruneopts = "UT"
   revision = "cccc0604d065635a724ce2e581ada9992b2fb10b"
+
+[[projects]]
+  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
 
 [[projects]]
   digest = "1:3804a3a02964db8e6db3e5e7960ac1c1a9b12835642dd4f4ac4e56c749ec73eb"
@@ -258,6 +268,14 @@
   pruneopts = "UT"
   revision = "1cf9852c553c5b7da2d5a4a091129a7822fed0c9"
   version = "v1.2.2"
+
+[[projects]]
+  digest = "1:87c2e02fb01c27060ccc5ba7c5a407cc91147726f8f40b70cceeedbc52b1f3a8"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e1e72e9de974bd926e5c56f83753fba2df402ce5"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:777e729b475d3895c7229552aa10076f0d177daf37c0a72258006d046d329960"
@@ -521,9 +539,12 @@
   analyzer-version = 1
   input-imports = [
     "github.com/aws/aws-lambda-go/lambda",
-    "github.com/ghodss/yaml",
     "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1",
+    "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
+    "github.com/sirupsen/logrus",
+    "gopkg.in/yaml.v2",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/client-go/rest",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

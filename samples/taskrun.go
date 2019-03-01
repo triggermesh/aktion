@@ -17,20 +17,23 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/ghodss/yaml"
-	"github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	v1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
+	log "github.com/sirupsen/logrus"
+	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	rest "k8s.io/client-go/rest"
 )
 
 //Handler handles events from github source
-func Handler(ctx context.Context) ([]byte, error) {
+func Handler(ctx context.Context) error {
 
 	taskName := os.Getenv("TASK_NAME")
+	namespace := os.Getenv("NAMESPACE")
 
 	tr := v1alpha1.TaskRun{
 		TypeMeta: metav1.TypeMeta{
@@ -39,7 +42,7 @@ func Handler(ctx context.Context) ([]byte, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              taskName + "-run",
-			Namespace:         "default",
+			Namespace:         namespace,
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.TaskRunSpec{
@@ -52,11 +55,25 @@ func Handler(ctx context.Context) ([]byte, error) {
 		},
 	}
 
-	out, err := yaml.Marshal(tr)
+	c := rest.Config{}
+
+	tekton, err := tektonv1alpha1.NewForConfig(&c)
+
+	taskRuns := tekton.TaskRuns(namespace)
+
+	res, err := taskRuns.Create(&tr)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	return out, nil
+
+	out, err := yaml.Marshal(*res)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("%s", out)
+
+	return nil
 }
 
 func main() {
