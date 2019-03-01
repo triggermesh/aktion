@@ -35,6 +35,24 @@ func Handler(ctx context.Context) error {
 	taskName := os.Getenv("TASK_NAME")
 	namespace := os.Getenv("NAMESPACE")
 
+	log.Infof("Start to create TaskRun with TaskName [%s] and namespace [%s]", taskName, namespace)
+
+	c, err := rest.InClusterConfig()
+	if err != nil {
+		log.Fatal()
+	}
+
+	log.Info("Created InClusterConfig: ", c)
+
+	tekton, err := tektonv1alpha1.NewForConfig(c)
+	if err != nil {
+		log.Fatal()
+	}
+
+	log.Info("Created Tekton client: ", tekton)
+
+	taskRuns := tekton.TaskRuns(namespace)
+
 	tr := v1alpha1.TaskRun{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "TaskRun",
@@ -55,23 +73,19 @@ func Handler(ctx context.Context) error {
 		},
 	}
 
-	c := rest.Config{}
-
-	tekton, err := tektonv1alpha1.NewForConfig(&c)
-
-	taskRuns := tekton.TaskRuns(namespace)
-
 	res, err := taskRuns.Create(&tr)
 	if err != nil {
 		return err
 	}
+
+	log.Info("Created TaskRun object in Kubernetes API")
 
 	out, err := yaml.Marshal(*res)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("%s", out)
+	log.Infof("TaskRun create output: %s", out)
 
 	return nil
 }
