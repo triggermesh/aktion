@@ -69,6 +69,7 @@ func Handler(ctx context.Context) error {
 			},
 			Trigger: v1alpha1.TaskTrigger{
 				Type: v1alpha1.TaskTriggerTypePipelineRun,
+				Name: "trigger",
 			},
 		},
 	}
