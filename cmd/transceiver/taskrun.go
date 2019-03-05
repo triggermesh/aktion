@@ -59,7 +59,7 @@ func Handler(ctx context.Context) error {
 			APIVersion: "pipeline.knative.dev/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              taskName + "-task-run",
+			GenerateName:      "aktion-run-",
 			Namespace:         namespace,
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},

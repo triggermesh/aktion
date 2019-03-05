@@ -1,0 +1,19 @@
+apiVersion: serving.knative.dev/v1alpha1 # Current version of Knative
+kind: Service
+metadata:
+  name: taskrun-receiver
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: github.com/triggermesh/aktion/cmd/transceiver
+            env:
+            - name: TASK_NAME
+              value: serverless-deploy
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace 
+
