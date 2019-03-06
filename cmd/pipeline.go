@@ -19,14 +19,13 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/actions/workflow-parser/model"
 	pipeline "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/triggermesh/aktion/pkg/apis"
 )
 
 var (
@@ -145,15 +144,16 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	}
 
 	taskRun.SetDefaults()
+	taskRun.TypeMeta = metav1.TypeMeta{
+		Kind: "TaskRun",
+		APIVersion: "pipeline.knative.dev/v1alpha1",
+	}
 
-	typeMeta := taskRun.TypeMeta
-	typeMeta.Kind = "TaskRun"
-	typeMeta.APIVersion = "pipeline.knative.dev/v1alpha1"
-	taskRun.TypeMeta = typeMeta
+	taskRun.ObjectMeta = metav1.ObjectMeta{
+		Name: name,
+		CreationTimestamp: metav1.Time{time.Now()},
+	}
 
-	objectMeta := taskRun.ObjectMeta
-	objectMeta.Name = name
-	taskRun.ObjectMeta = objectMeta
 	err := taskRun.Validate()
 	if err != nil {
 		Panic("Failed validation: %s\n", err)
@@ -162,8 +162,8 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	return taskRun
 }
 
-func CreateTask(tasks Tasks) apis.Task {
-	task := apis.Task{
+func CreateTask(tasks Tasks) pipeline.Task {
+	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",
 			APIVersion: "pipeline.knative.dev/v1alpha1",
@@ -173,7 +173,7 @@ func CreateTask(tasks Tasks) apis.Task {
 		},
 	}
 
-	var taskSpec apis.TaskSpec
+	var taskSpec pipeline.TaskSpec
 	steps := make([]corev1.Container, 0)
 	for _, t := range tasks.Task {
 		steps = append(steps, createContainer(t))
