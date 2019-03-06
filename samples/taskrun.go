@@ -83,14 +83,14 @@ func main() {
 
 	c, err := rest.InClusterConfig()
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 
 	log.Info("Created InClusterConfig: ", c)
 
 	tekton, err := tektonv1alpha1.NewForConfig(c)
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 
 	log.Info("Created Tekton client: ", tekton)
