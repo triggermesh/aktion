@@ -16,11 +16,10 @@ limitations under the License.
 package main
 
 import (
-	"context"
+	"net/http"
 	"os"
 	"time"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	v1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	log "github.com/sirupsen/logrus"
@@ -29,13 +28,58 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-//Handler handles events from github source
-func Handler(ctx context.Context) error {
+type TaskRunCreator struct {
+	TaskRefName string
+	Namespace   string
+	Tekton      *tektonv1alpha1.TektonV1alpha1Client
+}
 
-	taskName := os.Getenv("TASK_NAME")
+//Handler handles events from github source
+func (trc TaskRunCreator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	taskRuns := trc.Tekton.TaskRuns(trc.Namespace)
+
+	tr := v1alpha1.TaskRun{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "TaskRun",
+			APIVersion: "pipeline.knative.dev/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName:      "task-run-",
+			Namespace:         trc.Namespace,
+			CreationTimestamp: metav1.Time{Time: time.Now()},
+		},
+		Spec: v1alpha1.TaskRunSpec{
+			TaskRef: &v1alpha1.TaskRef{
+				Name: trc.TaskRefName,
+			},
+			Trigger: v1alpha1.TaskTrigger{
+				Type: v1alpha1.TaskTriggerTypeManual,
+				Name: "manual",
+			},
+		},
+	}
+
+	res, err := taskRuns.Create(&tr)
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.Info("Created TaskRun object in Kubernetes API")
+
+	out, err := yaml.Marshal(*res)
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.Infof("TaskRun create output: %s", out)
+}
+
+func main() {
+	taskRefName := os.Getenv("TASK_NAME")
 	namespace := os.Getenv("NAMESPACE")
 
-	log.Infof("Start to create TaskRun with TaskName [%s] and namespace [%s]", taskName, namespace)
+	log.Infof("Start to create TaskRun with TaskName [%s] and namespace [%s]", taskRefName, namespace)
 
 	c, err := rest.InClusterConfig()
 	if err != nil {
@@ -51,46 +95,11 @@ func Handler(ctx context.Context) error {
 
 	log.Info("Created Tekton client: ", tekton)
 
-	taskRuns := tekton.TaskRuns(namespace)
-
-	tr := v1alpha1.TaskRun{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "TaskRun",
-			APIVersion: "pipeline.knative.dev/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName:      "task-run-",
-			Namespace:         namespace,
-			CreationTimestamp: metav1.Time{Time: time.Now()},
-		},
-		Spec: v1alpha1.TaskRunSpec{
-			TaskRef: &v1alpha1.TaskRef{
-				Name: taskName,
-			},
-			Trigger: v1alpha1.TaskTrigger{
-				Type: v1alpha1.TaskTriggerTypeManual,
-				Name: "manual",
-			},
-		},
+	taskRunCreator := &TaskRunCreator{
+		TaskRefName: taskRefName,
+		Namespace:   namespace,
+		Tekton:      tekton,
 	}
 
-	res, err := taskRuns.Create(&tr)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Created TaskRun object in Kubernetes API")
-
-	out, err := yaml.Marshal(*res)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("TaskRun create output: %s", out)
-
-	return nil
-}
-
-func main() {
-	lambda.Start(Handler)
+	http.ListenAndServe(":8080", taskRunCreator)
 }
