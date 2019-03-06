@@ -28,16 +28,31 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type TaskRunCreator struct {
-	TaskRefName string
-	Namespace   string
-	Tekton      *tektonv1alpha1.TektonV1alpha1Client
-}
+type TaskRunCreator struct{}
 
-//Handler handles events from github source
 func (trc TaskRunCreator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 
-	taskRuns := trc.Tekton.TaskRuns(trc.Namespace)
+	taskRefName := os.Getenv("TASK_NAME")
+	namespace := os.Getenv("NAMESPACE")
+
+	log.Infof("Start to create TaskRun with TaskName [%s] and namespace [%s]", taskRefName, namespace)
+
+	c, err := rest.InClusterConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Info("Created InClusterConfig: ", c)
+
+	tekton, err := tektonv1alpha1.NewForConfig(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Info("Created Tekton client: ", tekton)
+
+	taskRuns := tekton.TaskRuns(namespace)
 
 	tr := v1alpha1.TaskRun{
 		TypeMeta: metav1.TypeMeta{
@@ -46,12 +61,12 @@ func (trc TaskRunCreator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName:      "task-run-",
-			Namespace:         trc.Namespace,
+			Namespace:         namespace,
 			CreationTimestamp: metav1.Time{Time: time.Now()},
 		},
 		Spec: v1alpha1.TaskRunSpec{
 			TaskRef: &v1alpha1.TaskRef{
-				Name: trc.TaskRefName,
+				Name: taskRefName,
 			},
 			Trigger: v1alpha1.TaskTrigger{
 				Type: v1alpha1.TaskTriggerTypeManual,
@@ -73,33 +88,10 @@ func (trc TaskRunCreator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Infof("TaskRun create output: %s", out)
+
+	w.Write(out)
 }
 
 func main() {
-	taskRefName := os.Getenv("TASK_NAME")
-	namespace := os.Getenv("NAMESPACE")
-
-	log.Infof("Start to create TaskRun with TaskName [%s] and namespace [%s]", taskRefName, namespace)
-
-	c, err := rest.InClusterConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Info("Created InClusterConfig: ", c)
-
-	tekton, err := tektonv1alpha1.NewForConfig(c)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Info("Created Tekton client: ", tekton)
-
-	taskRunCreator := &TaskRunCreator{
-		TaskRefName: taskRefName,
-		Namespace:   namespace,
-		Tekton:      tekton,
-	}
-
-	http.ListenAndServe(":8080", taskRunCreator)
+	http.ListenAndServe(":8080", TaskRunCreator{})
 }
