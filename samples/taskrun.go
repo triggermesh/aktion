@@ -16,11 +16,10 @@ limitations under the License.
 package main
 
 import (
-	"context"
+	"net/http"
 	"os"
 	"time"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	v1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	log "github.com/sirupsen/logrus"
@@ -29,24 +28,26 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-//Handler handles events from github source
-func Handler(ctx context.Context) error {
+type TaskRunCreator struct{}
 
-	taskName := os.Getenv("TASK_NAME")
+func (trc TaskRunCreator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+
+	taskRefName := os.Getenv("TASK_NAME")
 	namespace := os.Getenv("NAMESPACE")
 
-	log.Infof("Start to create TaskRun with TaskName [%s] and namespace [%s]", taskName, namespace)
+	log.Infof("Start to create TaskRun with TaskName [%s] and namespace [%s]", taskRefName, namespace)
 
 	c, err := rest.InClusterConfig()
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 
 	log.Info("Created InClusterConfig: ", c)
 
 	tekton, err := tektonv1alpha1.NewForConfig(c)
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 
 	log.Info("Created Tekton client: ", tekton)
@@ -65,7 +66,7 @@ func Handler(ctx context.Context) error {
 		},
 		Spec: v1alpha1.TaskRunSpec{
 			TaskRef: &v1alpha1.TaskRef{
-				Name: taskName,
+				Name: taskRefName,
 			},
 			Trigger: v1alpha1.TaskTrigger{
 				Type: v1alpha1.TaskTriggerTypeManual,
@@ -76,21 +77,21 @@ func Handler(ctx context.Context) error {
 
 	res, err := taskRuns.Create(&tr)
 	if err != nil {
-		return err
+		log.Error(err)
 	}
 
 	log.Info("Created TaskRun object in Kubernetes API")
 
 	out, err := yaml.Marshal(*res)
 	if err != nil {
-		return err
+		log.Error(err)
 	}
 
 	log.Infof("TaskRun create output: %s", out)
 
-	return nil
+	w.Write(out)
 }
 
 func main() {
-	lambda.Start(Handler)
+	http.ListenAndServe(":8080", TaskRunCreator{})
 }
