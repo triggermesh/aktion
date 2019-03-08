@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/actions/workflow-parser/model"
-	pipeline "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -135,7 +135,7 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	taskRun := pipeline.TaskRun{
 		Spec: pipeline.TaskRunSpec{
 			TaskRef: &pipeline.TaskRef{
-				Name: name,
+				Name: convertName(name),
 			},
 			Trigger: pipeline.TaskTrigger{
 				Type: pipeline.TaskTriggerTypeManual,
@@ -146,11 +146,11 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	taskRun.SetDefaults()
 	taskRun.TypeMeta = metav1.TypeMeta{
 		Kind: "TaskRun",
-		APIVersion: "pipeline.knative.dev/v1alpha1",
+		APIVersion: "tekton.dev/v1alpha1",
 	}
 
 	taskRun.ObjectMeta = metav1.ObjectMeta{
-		Name: name,
+		Name: convertName(name),
 		CreationTimestamp: metav1.Time{time.Now()},
 	}
 
@@ -166,10 +166,10 @@ func CreateTask(tasks Tasks) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",
-			APIVersion: "pipeline.knative.dev/v1alpha1",
+			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: tasks.Identifier,
+			Name: convertName(tasks.Identifier),
 		},
 	}
 
