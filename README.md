@@ -13,12 +13,12 @@ go get github.com/triggermesh/aktion
 ## Usage
 
 ```
-aktion parser -f main.workflow
+aktion pipeline -f samples/main.workflow
 ```
 
 ## Support
 
-We would love your feedback on this CLI tool so don't hesitate to let us know what is wrong and how we could improve it, just file an [issue](https://github.com/triggermesh/aktion/issues/new)
+We would love your feedback on this tool so don't hesitate to let us know what is wrong and how we could improve it, just file an [issue](https://github.com/triggermesh/aktion/issues/new)
 
 ## Code of Conduct
 

@@ -13,19 +13,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:fc53fe55ee530de09a7593d102a4aae9df3fa085abeb9fbd41becc6d56e335f2"
-  name = "github.com/aws/aws-lambda-go"
-  packages = [
-    "lambda",
-    "lambda/handlertrace",
-    "lambda/messages",
-    "lambdacontext",
-  ]
-  pruneopts = "UT"
-  revision = "c83699c938a36c6d111f9837be9295184efeeb2e"
-  version = "v1.9.0"
-
-[[projects]]
   digest = "1:6b21090f60571b20b3ddc2c8e48547dffcf409498ed6002c2cada023725ed377"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -348,6 +335,14 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:1d09d2cf8a5c805bb2309965147c070f481e88aabdd360c94b8a00efed79170b"
+  name = "github.com/tektoncd/pipeline"
+  packages = ["pkg/apis/pipeline/v1alpha1"]
+  pruneopts = "UT"
+  revision = "c1500fab83b09edadefb38bb8920a0c837d8f32b"
+  version = "v0.1.0"
+
+[[projects]]
   digest = "1:777e729b475d3895c7229552aa10076f0d177daf37c0a72258006d046d329960"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -612,12 +607,12 @@
   input-imports = [
     "github.com/actions/workflow-parser/model",
     "github.com/actions/workflow-parser/parser",
-    "github.com/aws/aws-lambda-go/lambda",
     "github.com/ghodss/yaml",
     "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1",
     "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
+    "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
