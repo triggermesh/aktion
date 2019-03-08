@@ -2,6 +2,20 @@
 
 The function creates a `TaskRun` object to execute the selected `Task` object  
 
-## Function Deploy
 
-Deploy the function with buildtemplate and env variables ```tm deploy service taskrun -f . --build-template https://raw.githubusercontent.com/triggermesh/knative-lambda-runtime/master/go-1.x/buildtemplate.yaml --env TASK_NAME=yourtaskname --env NAMESPACE=yourNamespace --wait ```
+### Local usage
+
+```
+dep ensure -v
+go build -o taskrun .
+./taskrun
+```
+
+### Local Docker Usage
+
+```
+docker build -t taskrun:latest . 
+docker run -ti -e TASK_NAME="your_task_name" \
+               -e NAMESPACE="your_namespace" \
+               taskrun:latest
+```

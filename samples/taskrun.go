@@ -93,5 +93,6 @@ func (trc TaskRunCreator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	log.Info("Start server at port :8080 ")
 	http.ListenAndServe(":8080", TaskRunCreator{})
 }
