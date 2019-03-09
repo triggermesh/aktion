@@ -7,6 +7,7 @@ workflow "knative test" {
 
 action "First Action" {
   uses = "docker://centos"
+  needs = "With Secrets"
   runs = "echo"
   env = {
     FOO = "BAR"
