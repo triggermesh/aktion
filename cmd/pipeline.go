@@ -40,6 +40,7 @@ type Task struct {
 	Cmd        []string
 	Args       []string
 	Envs       []corev1.EnvVar
+	EnvFrom	   []corev1.EnvFromSource
 }
 
 type Tasks struct {
@@ -128,6 +129,16 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 		task.Envs = append(task.Envs, env)
 	}
 
+    if action.Secrets != nil {
+		task.EnvFrom = make([]corev1.EnvFromSource, 0)
+		for _, s := range action.Secrets {
+			secret := corev1.EnvFromSource{
+				SecretRef: &corev1.SecretEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: s}},
+			}
+			task.EnvFrom = append(task.EnvFrom, secret)
+		}
+	}
+
 	return append(tasks, task)
 }
 
@@ -191,6 +202,7 @@ func createContainer(task Task) corev1.Container {
 		Command: task.Cmd,
 		Args:    task.Args,
 		Env:     task.Envs,
+		EnvFrom: task.EnvFrom,
 	}
 }
 
