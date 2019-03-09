@@ -129,12 +129,14 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 		task.Envs = append(task.Envs, env)
 	}
 
-	task.EnvFrom = make([]corev1.EnvFromSource, 0)
-	for _, s := range action.Secrets {
-		secret := corev1.EnvFromSource{
-			SecretRef: &corev1.SecretEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: s}},
+    if action.Secrets != nil {
+		task.EnvFrom = make([]corev1.EnvFromSource, 0)
+		for _, s := range action.Secrets {
+			secret := corev1.EnvFromSource{
+				SecretRef: &corev1.SecretEnvSource{LocalObjectReference: corev1.LocalObjectReference{Name: s}},
+			}
+			task.EnvFrom = append(task.EnvFrom, secret)
 		}
-		task.EnvFrom = append(task.EnvFrom, secret)
 	}
 
 	return append(tasks, task)
