@@ -12,4 +12,11 @@ action "First Action" {
     FOO = "BAR"
   }
   args = "Hello world"
+  secrets = ["BAR", "BAZ"]
+}
+
+action "With Secrets" {
+  uses = "docker://centos"
+  runs = "echo"
+  secrets = ["FOO", "BAR"]
 }
