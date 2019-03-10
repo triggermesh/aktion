@@ -57,7 +57,7 @@ func NewCreateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config := ParseData()
 			visitedActionDependency = make(map[string]bool)
-			
+
 			if repo != "" {
 				repoPipeline := createPipelineResource(repo, config)
 
@@ -180,7 +180,7 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	}
 
 	taskRun.ObjectMeta = metav1.ObjectMeta{
-		Name: convertName(name),
+		Name:              convertName(name),
 		CreationTimestamp: metav1.Time{time.Now()},
 	}
 
@@ -199,7 +199,7 @@ func CreateTask(repo string, tasks Tasks) pipeline.Task {
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   convertName(tasks.Identifier),
+			Name: convertName(tasks.Identifier),
 		},
 	}
 
@@ -209,8 +209,8 @@ func CreateTask(repo string, tasks Tasks) pipeline.Task {
 	if repo != "" {
 		taskSpec.Inputs = &pipeline.Inputs{
 			Resources: []pipeline.TaskResource{{
-					Name: convertName(tasks.Identifier),
-					Type: "git",
+				Name: convertName(tasks.Identifier),
+				Type: "git",
 			}},
 		}
 	}
@@ -234,24 +234,24 @@ func createPipelineResource(repo string, config *model.Configuration) pipeline.P
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   convertName(workflow.Identifier),
+			Name: convertName(workflow.Identifier),
 		},
 	}
 
-    inputparams := make([]pipeline.Param, 0)
-
-    inputparams = append(inputparams, pipeline.Param{
-    		Name: "revision",
-    		Value: "master",
-    	})
+	inputparams := make([]pipeline.Param, 0)
 
 	inputparams = append(inputparams, pipeline.Param{
-    		Name: "url",
-    		Value: repo,
-    	})    
+		Name:  "revision",
+		Value: "master",
+	})
+
+	inputparams = append(inputparams, pipeline.Param{
+		Name:  "url",
+		Value: repo,
+	})
 
 	resourcespec := pipeline.PipelineResourceSpec{
-		Type: "git",
+		Type:   "git",
 		Params: inputparams,
 	}
 	resource.Spec = resourcespec
