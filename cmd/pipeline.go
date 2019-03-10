@@ -22,16 +22,17 @@ import (
 	"time"
 
 	"github.com/actions/workflow-parser/model"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/spf13/cobra"
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	event    string
-	repo     string
-	registry string
+	event                   string
+	repo                    string
+	registry                string
+	visitedActionDependency map[string]bool
 )
 
 type Task struct {
@@ -40,7 +41,7 @@ type Task struct {
 	Cmd        []string
 	Args       []string
 	Envs       []corev1.EnvVar
-	EnvFrom	   []corev1.EnvFromSource
+	EnvFrom    []corev1.EnvFromSource
 }
 
 type Tasks struct {
@@ -54,6 +55,7 @@ func NewPipelineCmd() *cobra.Command {
 		Short: "Convert the Github Action workflow into a Knative Pipeline task list",
 		Run: func(cmd *cobra.Command, args []string) {
 			config := ParseData()
+			visitedActionDependency = make(map[string]bool)
 
 			for _, act := range config.Workflows {
 				taskRun := CreateTaskRun(act.Identifier)
@@ -93,7 +95,9 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 
 	if len(action.Needs) > 0 {
 		for _, a := range action.Needs {
-			tasks = append(tasks, extractActions(config.GetAction(a), config)...)
+			if !visitedActionDependency[config.GetAction(a).Identifier] {
+				tasks = append(tasks, extractActions(config.GetAction(a), config)...)
+			}
 		}
 	}
 
@@ -106,7 +110,7 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 	}
 
 	if !strings.HasPrefix(action.Uses.String(), "docker://") {
-		Panic("Can only support docker images for now.")
+		Panic("Can only support docker images for now.\n")
 	}
 
 	task.Image = strings.TrimPrefix(action.Uses.String(), "docker://")
@@ -129,7 +133,7 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 		task.Envs = append(task.Envs, env)
 	}
 
-    if action.Secrets != nil {
+	if action.Secrets != nil {
 		task.EnvFrom = make([]corev1.EnvFromSource, 0)
 		for _, s := range action.Secrets {
 			secret := corev1.EnvFromSource{
@@ -138,6 +142,9 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 			task.EnvFrom = append(task.EnvFrom, secret)
 		}
 	}
+
+	// Mark as visited
+	visitedActionDependency[task.Identifier] = true
 
 	return append(tasks, task)
 }
@@ -156,12 +163,12 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 
 	taskRun.SetDefaults()
 	taskRun.TypeMeta = metav1.TypeMeta{
-		Kind: "TaskRun",
+		Kind:       "TaskRun",
 		APIVersion: "tekton.dev/v1alpha1",
 	}
 
 	taskRun.ObjectMeta = metav1.ObjectMeta{
-		Name: convertName(name),
+		Name:              convertName(name),
 		CreationTimestamp: metav1.Time{time.Now()},
 	}
 
@@ -180,7 +187,8 @@ func CreateTask(tasks Tasks) pipeline.Task {
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: convertName(tasks.Identifier),
+			Name:              convertName(tasks.Identifier),
+			CreationTimestamp: metav1.Time{time.Now()},
 		},
 	}
 
