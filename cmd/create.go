@@ -70,7 +70,7 @@ func NewCreateCmd() *cobra.Command {
 				taskRun := CreateTaskRun(act.Identifier)
 				tasks := extractTasks(act.Identifier, config)
 
-				GenerateOutput(CreateTask(tasks))
+				GenerateOutput(CreateTask(repo, tasks))
 				fmt.Println("---")
 				if taskrun == true {
 					GenerateOutput(taskRun)
@@ -192,7 +192,7 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	return taskRun
 }
 
-func CreateTask(tasks Tasks) pipeline.Task {
+func CreateTask(repo string, tasks Tasks) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",
@@ -205,6 +205,16 @@ func CreateTask(tasks Tasks) pipeline.Task {
 
 	var taskSpec pipeline.TaskSpec
 	steps := make([]corev1.Container, 0)
+
+	if repo != "" {
+		taskSpec.Inputs = &pipeline.Inputs{
+			Resources: []pipeline.TaskResource{{
+					Name: convertName(tasks.Identifier),
+					Type: "git",
+			}},
+		}
+	}
+
 	for _, t := range tasks.Task {
 		steps = append(steps, createContainer(t))
 	}
