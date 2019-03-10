@@ -32,6 +32,7 @@ var (
 	event                   string
 	repo                    string
 	registry                string
+	taskrun                 bool
 	visitedActionDependency map[string]bool
 )
 
@@ -49,29 +50,40 @@ type Tasks struct {
 	Task       []Task
 }
 
-func NewPipelineCmd() *cobra.Command {
-	pipelineCmd := &cobra.Command{
-		Use:   "pipeline",
-		Short: "Convert the Github Action workflow into a Knative Pipeline task list",
+func NewCreateCmd() *cobra.Command {
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Convert the Github Action workflow into a Tekton Task list",
 		Run: func(cmd *cobra.Command, args []string) {
 			config := ParseData()
 			visitedActionDependency = make(map[string]bool)
+
+			if repo != "" {
+				repoPipeline := createPipelineResource(repo, config)
+
+				fmt.Println("---")
+				GenerateOutput(repoPipeline)
+				fmt.Println("---")
+			}
 
 			for _, act := range config.Workflows {
 				taskRun := CreateTaskRun(act.Identifier)
 				tasks := extractTasks(act.Identifier, config)
 
-				GenerateOutput(CreateTask(tasks))
+				GenerateOutput(CreateTask(repo, tasks))
 				fmt.Println("---")
-				GenerateOutput(taskRun)
+				if taskrun == true {
+					GenerateOutput(taskRun)
+				}
 			}
 		},
 	}
 
-	pipelineCmd.Flags().StringVarP(&repo, "repo", "", "", "Upstream git repository")
-	pipelineCmd.Flags().StringVarP(&registry, "registry", "r", "knative.registry.svc.cluster.local", "Default docker registry")
+	createCmd.Flags().StringVarP(&repo, "repo", "", "", "Upstream git repository")
+	createCmd.Flags().StringVarP(&registry, "registry", "r", "knative.registry.svc.cluster.local", "Default docker registry")
+	createCmd.Flags().BoolVarP(&taskrun, "taskrun", "t", false, "Flag to create TaskRun")
 
-	return pipelineCmd
+	return createCmd
 }
 
 func extractTasks(name string, config *model.Configuration) Tasks {
@@ -180,20 +192,29 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	return taskRun
 }
 
-func CreateTask(tasks Tasks) pipeline.Task {
+func CreateTask(repo string, tasks Tasks) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              convertName(tasks.Identifier),
-			CreationTimestamp: metav1.Time{time.Now()},
+			Name: convertName(tasks.Identifier),
 		},
 	}
 
 	var taskSpec pipeline.TaskSpec
 	steps := make([]corev1.Container, 0)
+
+	if repo != "" {
+		taskSpec.Inputs = &pipeline.Inputs{
+			Resources: []pipeline.TaskResource{{
+				Name: convertName(tasks.Identifier),
+				Type: "git",
+			}},
+		}
+	}
+
 	for _, t := range tasks.Task {
 		steps = append(steps, createContainer(t))
 	}
@@ -201,6 +222,40 @@ func CreateTask(tasks Tasks) pipeline.Task {
 	task.Spec = taskSpec
 
 	return task
+}
+
+func createPipelineResource(repo string, config *model.Configuration) pipeline.PipelineResource {
+
+	// Hack: Get the first worklow in the list to get a name
+	workflow := config.Workflows[0]
+	resource := pipeline.PipelineResource{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PipelineResource",
+			APIVersion: "tekton.dev/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: convertName(workflow.Identifier),
+		},
+	}
+
+	inputparams := make([]pipeline.Param, 0)
+
+	inputparams = append(inputparams, pipeline.Param{
+		Name:  "revision",
+		Value: "master",
+	})
+
+	inputparams = append(inputparams, pipeline.Param{
+		Name:  "url",
+		Value: repo,
+	})
+
+	resourcespec := pipeline.PipelineResourceSpec{
+		Type:   "git",
+		Params: inputparams,
+	}
+	resource.Spec = resourcespec
+	return resource
 }
 
 func createContainer(task Task) corev1.Container {
