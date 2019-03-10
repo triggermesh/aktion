@@ -56,11 +56,14 @@ func NewCreateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config := ParseData()
 			visitedActionDependency = make(map[string]bool)
-			repoPipeline := createPipelineResource(repo, config)
+			
+			if repo != "" {
+				repoPipeline := createPipelineResource(repo, config)
 
 				fmt.Println("---")
 				GenerateOutput(repoPipeline)
 				fmt.Println("---")
+			}
 
 			for _, act := range config.Workflows {
 				taskRun := CreateTaskRun(act.Identifier)
