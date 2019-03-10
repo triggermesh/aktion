@@ -35,7 +35,7 @@ var (
 
 var aktionCmd = &cobra.Command{
 	Use:     "aktion",
-	Short:   "Actions for Knative",
+	Short:   "Convert GitHub Actions workflow into Tekton resources",
 	Version: version,
 }
 
@@ -99,10 +99,10 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	aktionCmd.PersistentFlags().StringVarP(&filename, "filename", "f", "main.workflow", "Github Action Workflow File")
-	aktionCmd.PersistentFlags().StringVarP(&outputType, "outputType", "o", "yaml", "Output type for the results (json|yaml)")
+	aktionCmd.PersistentFlags().StringVarP(&outputType, "output", "o", "yaml", "Output type for the results (json|yaml)")
 	aktionCmd.AddCommand(versionCmd)
 	aktionCmd.AddCommand(NewParserCmd())
-	aktionCmd.AddCommand(NewPipelineCmd())
+	aktionCmd.AddCommand(NewCreateCmd())
 }
 
 func initConfig() {
