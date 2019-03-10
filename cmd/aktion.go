@@ -103,6 +103,7 @@ func init() {
 	aktionCmd.AddCommand(versionCmd)
 	aktionCmd.AddCommand(NewParserCmd())
 	aktionCmd.AddCommand(NewCreateCmd())
+	aktionCmd.AddCommand(NewLaunchCmd())
 }
 
 func initConfig() {

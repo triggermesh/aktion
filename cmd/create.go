@@ -32,6 +32,7 @@ var (
 	event                   string
 	repo                    string
 	registry                string
+	taskrun                 bool
 	visitedActionDependency map[string]bool
 )
 
@@ -71,13 +72,16 @@ func NewCreateCmd() *cobra.Command {
 
 				GenerateOutput(CreateTask(tasks))
 				fmt.Println("---")
-				GenerateOutput(taskRun)
+				if taskrun == true {
+					GenerateOutput(taskRun)
+				}
 			}
 		},
 	}
 
 	createCmd.Flags().StringVarP(&repo, "repo", "", "", "Upstream git repository")
 	createCmd.Flags().StringVarP(&registry, "registry", "r", "knative.registry.svc.cluster.local", "Default docker registry")
+	createCmd.Flags().BoolVarP(&taskrun, "taskrun", "t", false, "Flag to create TaskRun")
 
 	return createCmd
 }
