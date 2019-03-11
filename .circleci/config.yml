@@ -1,0 +1,90 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/triggermesh/aktion
+    docker:
+      - image: circleci/golang
+    steps:
+      # - run:
+      #     name: Install gcloud SDK
+      #     command: |
+      #       echo "deb http://packages.cloud.google.com/apt cloud-sdk-stretch main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+      #       curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+      #       go get -u github.com/jstemmer/go-junit-report
+      #       sudo apt-get update -y
+      #       sudo apt-get install google-cloud-sdk -y
+      # - run:
+      #     name: Store Service Account
+      #     command: echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+      # - run:
+      #     name: Setup credentials 
+      #     command: |
+      #       gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+      #       gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+      #       gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+      #       gcloud --quiet container clusters get-credentials ${GOOGLE_CLUSTER_NAME}
+      #       mkdir -p ${HOME}/.tm/
+      #       cp ${HOME}/.kube/config ${HOME}/.tm/config.json
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-pkg-cache
+      # - run:
+      #     name: Run validations
+      #     command: make validation
+      # - run:
+      #     name: Run unit tests
+      #     command: |
+      #       mkdir tests
+      #       make test | tee go-test.out
+      #       go-junit-report <go-test.out > tests/go-test-report.xml
+      # - store_test_results:
+      #    path: tests
+      - run:
+          name: Build binaries
+          command: |
+            make build
+            make build-osx
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - "/go/pkg"
+      - persist_to_workspace:
+          root: /go/src/github.com/triggermesh/aktion
+          paths:
+            - aktion
+            - aktion_osx
+
+  release:
+    docker:
+      - image: circleci/golang
+    steps:
+      - attach_workspace:
+          at: /tmp/artifacts
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=$(/tmp/artifacts/aktion --version | awk '{print $3}')
+            # Workaround not to trigger build loop by updating tag with artifacts
+            status=$(curl -s -I https://github.com/triggermesh/aktion/releases/download/${VERSION}/aktion | grep "Status:" | tr -d "\r")
+            if [[ "${status}" != "Status: 302 Found" ]]; then
+              ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} /tmp/artifacts
+            fi
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
+      - release:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/

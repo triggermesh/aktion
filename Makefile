@@ -1,6 +1,5 @@
 GOCMD=go
-#VERSION=$(shell git describe --tags)
-VERSION=HEAD
+VERSION=$(shell git describe --tags || echo "HEAD")
 GOBUILD=$(GOCMD) build -ldflags="-s -w -X github.com/triggermesh/aktion/cmd.version=$(VERSION)"
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
@@ -25,6 +24,12 @@ clean:
 run:
 	$(GOBUILD) -o $(BINARY_NAME) -v 
 	./$(BINARY_NAME)
+
+validation:	
+	# ./script/validate-vet
+	./script/validate-lint
+	./script/validate-gofmt
+	./script/validate-git-marks
 
 install:
 	$(GOCMD) install -v 
