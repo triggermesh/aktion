@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:4d6f036ea3fe636bcb2e89850bcdc62a771354e157cd51b8b22a2de8562bf663"
+  name = "cloud.google.com/go"
+  packages = ["compute/metadata"]
+  pruneopts = "UT"
+  revision = "c9474f2f8deb81759839474b6bd1726bbfe1c1c4"
+  version = "v0.36.0"
+
+[[projects]]
   digest = "1:f3230311006740dbd65ad1c0be06c03b858704df7dc0e00defe1230f35c1b788"
   name = "github.com/actions/workflow-parser"
   packages = [
@@ -152,6 +160,14 @@
   source = "github.com/actions/hcl"
 
 [[projects]]
+  digest = "1:a0cefd27d12712af4b5018dc7046f245e1e3b5760e2e848c30b171b570708f9b"
+  name = "github.com/imdario/mergo"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7c29201646fa3de8506f701213473dd407f19646"
+  version = "v0.3.7"
+
+[[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
@@ -185,11 +201,12 @@
   revision = "v0.3.0"
 
 [[projects]]
-  digest = "1:28be7399457c4f19698f7975d0f2b3f76ab659567843ebf2ebf992ef8cb7d7a1"
+  digest = "1:2ad655d782e9145b309817d384937e248329a6e92a527c60726b913b153d0b9d"
   name = "github.com/knative/build-pipeline"
   packages = [
     "pkg/apis/pipeline",
     "pkg/apis/pipeline/v1alpha1",
+    "pkg/client/clientset/versioned",
     "pkg/client/clientset/versioned/scheme",
     "pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
     "pkg/names",
@@ -335,14 +352,6 @@
   version = "v1.0.3"
 
 [[projects]]
-  digest = "1:1d09d2cf8a5c805bb2309965147c070f481e88aabdd360c94b8a00efed79170b"
-  name = "github.com/tektoncd/pipeline"
-  packages = ["pkg/apis/pipeline/v1alpha1"]
-  pruneopts = "UT"
-  revision = "c1500fab83b09edadefb38bb8920a0c837d8f32b"
-  version = "v0.1.0"
-
-[[projects]]
   digest = "1:777e729b475d3895c7229552aa10076f0d177daf37c0a72258006d046d329960"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -383,10 +392,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c9f70fa85ce8a5e7a0a3b4b5de59dd945cdd2d1478ee1de95c2be0ad372be223"
+  digest = "1:1607f934bc1fe218372d78f9e0bda5a5e656fafe8d4bb3ef075a31c2dab5d9b8"
   name = "golang.org/x/net"
   packages = [
     "context",
+    "context/ctxhttp",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -394,6 +404,20 @@
   ]
   pruneopts = "UT"
   revision = "16b79f2e4e95ea23b2bf9903c9809ff7b013ce85"
+
+[[projects]]
+  branch = "master"
+  digest = "1:5e9f22cf754ab20a5dff0ae04b12516b112c5b81cd44dccccde148865084d730"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "google",
+    "internal",
+    "jws",
+    "jwt",
+  ]
+  pruneopts = "UT"
+  revision = "e64efc72b421e893cbf63f17ba2221e7d6d0b0f3"
 
 [[projects]]
   branch = "master"
@@ -435,6 +459,25 @@
   packages = ["rate"]
   pruneopts = "UT"
   revision = "f51c12702a4d776e4c1fa9b0fabab841babae631"
+
+[[projects]]
+  digest = "1:fa026a5c59bd2df343ec4a3538e6288dcf4e2ec5281d743ae82c120affe6926a"
+  name = "google.golang.org/appengine"
+  packages = [
+    ".",
+    "internal",
+    "internal/app_identity",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/modules",
+    "internal/remote_api",
+    "internal/urlfetch",
+    "urlfetch",
+  ]
+  pruneopts = "UT"
+  revision = "e9657d882bb81064595ca3b56cbe2546bbabf7b1"
+  version = "v1.4.0"
 
 [[projects]]
   digest = "1:ef72505cf098abdd34efeea032103377bec06abb61d8a06f002d5d296a4b1185"
@@ -541,7 +584,7 @@
   version = "kubernetes-1.11.3"
 
 [[projects]]
-  digest = "1:a45592e21ae5e36973311f118530c78ac9e3fe0cb45a3128302af7f7fbe7500a"
+  digest = "1:626b19268925d9fb5b1d30ee1cfbc5cca5d1a876ab7f8054ed1618dab18df763"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -582,10 +625,16 @@
     "pkg/apis/clientauthentication/v1beta1",
     "pkg/version",
     "plugin/pkg/client/auth/exec",
+    "plugin/pkg/client/auth/gcp",
     "rest",
     "rest/watch",
+    "third_party/forked/golang/template",
+    "tools/auth",
     "tools/cache",
+    "tools/clientcmd",
     "tools/clientcmd/api",
+    "tools/clientcmd/api/latest",
+    "tools/clientcmd/api/v1",
     "tools/metrics",
     "tools/pager",
     "tools/reference",
@@ -594,7 +643,9 @@
     "util/cert",
     "util/connrotation",
     "util/flowcontrol",
+    "util/homedir",
     "util/integer",
+    "util/jsonpath",
     "util/retry",
   ]
   pruneopts = "UT"
@@ -609,14 +660,17 @@
     "github.com/actions/workflow-parser/parser",
     "github.com/ghodss/yaml",
     "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1",
+    "github.com/knative/build-pipeline/pkg/client/clientset/versioned",
     "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
-    "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
+    "k8s.io/client-go/kubernetes",
+    "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
+    "k8s.io/client-go/tools/clientcmd",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

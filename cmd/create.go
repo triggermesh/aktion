@@ -23,7 +23,10 @@ import (
 
 	"github.com/actions/workflow-parser/model"
 	"github.com/spf13/cobra"
-	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+
+	"github.com/triggermesh/aktion/pkg/client"
+
+	pipeline "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -34,6 +37,8 @@ var (
 	registry                string
 	taskrun                 bool
 	visitedActionDependency map[string]bool
+	applyPipelineFlag       bool
+	kubeNamespace           string
 )
 
 type Task struct {
@@ -50,13 +55,14 @@ type Tasks struct {
 	Task       []Task
 }
 
-func NewCreateCmd() *cobra.Command {
+func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Convert the Github Action workflow into a Tekton Task list",
 		Run: func(cmd *cobra.Command, args []string) {
 			config := ParseData()
 			visitedActionDependency = make(map[string]bool)
+			namespace = *ns
 
 			if repo != "" {
 				repoPipeline := createPipelineResource(repo, config)
@@ -70,10 +76,14 @@ func NewCreateCmd() *cobra.Command {
 				taskRun := CreateTaskRun(act.Identifier)
 				tasks := extractTasks(act.Identifier, config)
 
-				GenerateOutput(CreateTask(repo, tasks))
-				fmt.Println("---")
-				if taskrun == true {
-					GenerateOutput(taskRun)
+				if applyPipelineFlag {
+					applyPipeline(*kubeConfig, taskRun, CreateTask(tasks))
+				} else {
+					fmt.Printf("%s", GenerateOutput(CreateTask(tasks)))
+
+                    if taskrun {
+                        fmt.Printf("---%s\n", GenerateOutput(taskRun))
+                    }
 				}
 			}
 		},
@@ -82,8 +92,29 @@ func NewCreateCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&repo, "repo", "", "", "Upstream git repository")
 	createCmd.Flags().StringVarP(&registry, "registry", "r", "knative.registry.svc.cluster.local", "Default docker registry")
 	createCmd.Flags().BoolVarP(&taskrun, "taskrun", "t", false, "Flag to create TaskRun")
+	createCmd.Flags().BoolVarP(&applyPipelineFlag, "apply", "a", false, "Apply the generated Tekton pipeline to the user's kubernetes cluster")
 
 	return createCmd
+}
+
+func applyPipeline(kubeConfig string, taskRun pipeline.TaskRun, tasks pipeline.Task) {
+    // add if check for taskrun to build/inject the task
+    clientSet, err := client.NewClient(client.ConfigPath(kubeConfig))
+    if err != nil {
+        Panic("Error connecting to kubernetes cluster: %s\n", err)
+    }
+
+    _, err = clientSet.Pipeline.TektonV1alpha1().Tasks(namespace).Create(&tasks)
+    if err != nil {
+        Panic("Unable to create tasks: %s\n", err)
+    }
+
+    if taskrun {
+        _, err = clientSet.Pipeline.TektonV1alpha1().TaskRuns(namespace).Create(&taskRun)
+        if err != nil {
+            Panic ("Unable to create task run: %s\n", err)
+        }
+    }
 }
 
 func extractTasks(name string, config *model.Configuration) Tasks {
@@ -192,7 +223,7 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	return taskRun
 }
 
-func CreateTask(repo string, tasks Tasks) pipeline.Task {
+func CreateTask(tasks Tasks) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",

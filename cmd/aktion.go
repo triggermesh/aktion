@@ -31,6 +31,8 @@ var (
 	version    string
 	filename   string
 	outputType string
+	kubeConfig string
+	namespace  string
 )
 
 var aktionCmd = &cobra.Command{
@@ -44,7 +46,7 @@ func Panic(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func GenerateOutput(data interface{}) {
+func GenerateOutput(data interface{}) string {
 	var output []byte
 	var err error
 
@@ -62,7 +64,7 @@ func GenerateOutput(data interface{}) {
 		Panic("Unsupported format: %s. Expect json or yaml\n", outputType)
 	}
 
-	fmt.Printf("%s\n", output)
+	return fmt.Sprintf("%s", output)
 }
 
 func ParseData() *model.Configuration {
@@ -100,9 +102,11 @@ func init() {
 
 	aktionCmd.PersistentFlags().StringVarP(&filename, "filename", "f", "main.workflow", "Github Action Workflow File")
 	aktionCmd.PersistentFlags().StringVarP(&outputType, "output", "o", "yaml", "Output type for the results (json|yaml)")
+	aktionCmd.PersistentFlags().StringVarP(&kubeConfig, "kubeconfig", "k", "", "Kubernetes config file")
+	aktionCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "Kubernetes namespace")
 	aktionCmd.AddCommand(versionCmd)
 	aktionCmd.AddCommand(NewParserCmd())
-	aktionCmd.AddCommand(NewCreateCmd())
+	aktionCmd.AddCommand(NewCreateCmd(&kubeConfig, &namespace))
 	aktionCmd.AddCommand(NewLaunchCmd())
 }
 

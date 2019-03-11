@@ -16,14 +16,18 @@ limitations under the License.
 
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
 
 func NewParserCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "parser",
 		Short: "Parse the workflow into a JSON file",
 		Run: func(cmd *cobra.Command, args []string) {
-			GenerateOutput(ParseData())
+			fmt.Print(GenerateOutput(ParseData()))
 		},
 	}
 }
