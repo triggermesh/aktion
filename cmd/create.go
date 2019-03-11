@@ -81,9 +81,9 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 				} else {
 					fmt.Printf("%s", GenerateOutput(CreateTask(tasks)))
 
-                    if taskrun {
-                        fmt.Printf("---%s\n", GenerateOutput(taskRun))
-                    }
+					if taskrun {
+						fmt.Printf("---%s\n", GenerateOutput(taskRun))
+					}
 				}
 			}
 		},
@@ -98,23 +98,23 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 }
 
 func applyPipeline(kubeConfig string, taskRun pipeline.TaskRun, tasks pipeline.Task) {
-    // add if check for taskrun to build/inject the task
-    clientSet, err := client.NewClient(client.ConfigPath(kubeConfig))
-    if err != nil {
-        Panic("Error connecting to kubernetes cluster: %s\n", err)
-    }
+	// add if check for taskrun to build/inject the task
+	clientSet, err := client.NewClient(client.ConfigPath(kubeConfig))
+	if err != nil {
+		Panic("Error connecting to kubernetes cluster: %s\n", err)
+	}
 
-    _, err = clientSet.Pipeline.TektonV1alpha1().Tasks(namespace).Create(&tasks)
-    if err != nil {
-        Panic("Unable to create tasks: %s\n", err)
-    }
+	_, err = clientSet.Pipeline.TektonV1alpha1().Tasks(namespace).Create(&tasks)
+	if err != nil {
+		Panic("Unable to create tasks: %s\n", err)
+	}
 
-    if taskrun {
-        _, err = clientSet.Pipeline.TektonV1alpha1().TaskRuns(namespace).Create(&taskRun)
-        if err != nil {
-            Panic ("Unable to create task run: %s\n", err)
-        }
-    }
+	if taskrun {
+		_, err = clientSet.Pipeline.TektonV1alpha1().TaskRuns(namespace).Create(&taskRun)
+		if err != nil {
+			Panic("Unable to create task run: %s\n", err)
+		}
+	}
 }
 
 func extractTasks(name string, config *model.Configuration) Tasks {

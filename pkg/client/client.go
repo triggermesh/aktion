@@ -30,8 +30,8 @@ import (
 )
 
 type ConfigSet struct {
-	Core         *kubernetes.Clientset
-	Pipeline     *pipelineApi.Clientset
+	Core     *kubernetes.Clientset
+	Pipeline *pipelineApi.Clientset
 
 	Config *rest.Config
 }
