@@ -21,10 +21,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	sources "github.com/knative/eventing-sources/pkg/apis/sources/v1alpha1"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+//	corev1 "k8s.io/api/core/v1"
+//	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+//	sources "github.com/knative/eventing-sources/pkg/apis/sources/v1alpha1"
+//	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 var (
@@ -42,12 +42,13 @@ func NewLaunchCmd() *cobra.Command {
 			fmt.Println("---")
 		},
 	}
-	launchCmd.Flags().StringVarP(&taskname, "taskname", "task", "", "Task Name to Trigger")
+	launchCmd.Flags().StringVarP(&taskname, "taskname", "t", "", "Task Name to Trigger")
 
 	return launchCmd
 }
-
-func CreateGithubSource(taskname string) sources.GitHubSource {
+func CreateGithubSource(taskname string) string {
+    return ""
+    /*
 	return sources.GitHubSource{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "GitHubSource",
@@ -82,8 +83,12 @@ func CreateGithubSource(taskname string) sources.GitHubSource {
 		},
 	},
 }}
+*/
+}
 
-func CreateTransceiver(taskname string) serving.Service {
+func CreateTransceiver(taskname string) string {
+    return ""
+    /*
 	return serving.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -94,5 +99,5 @@ func CreateTransceiver(taskname string) serving.Service {
 		},
 		Spec: serving.ServiceSpec{
 	}
-
+*/
 }
