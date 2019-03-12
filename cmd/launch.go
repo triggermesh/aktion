@@ -48,40 +48,40 @@ func NewLaunchCmd() *cobra.Command {
 func CreateGithubSource(taskname string) string {
 	return ""
 	/*
-		return sources.GitHubSource{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "GitHubSource",
-				APIVersion: sources.SchemeGroupVersion.String(),
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "foo",
-			},
-			Spec: sources.GitHubSourceSpec{
-				OwnerAndRepository : "sebgoa/foo",
-				EventTypes: []string{"push"},
-				AccessToken: sources.SecretValueFromSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "githubsecret",
-						},
-						Key: "accesstoken",
-					},
+			return sources.GitHubSource{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "GitHubSource",
+					APIVersion: sources.SchemeGroupVersion.String(),
 				},
-				SecretToken: sources.SecretValueFromSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "githubsecret",
-						},
-						Key: "secrettoken",
-					},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foo",
 				},
-				Sink: &corev1.ObjectReference{
-						Name:       taskname,
-						Kind:       "Service",
-						APIVersion: "serving.knative.dev/v1alpha1",
+				Spec: sources.GitHubSourceSpec{
+					OwnerAndRepository : "sebgoa/foo",
+					EventTypes: []string{"push"},
+					AccessToken: sources.SecretValueFromSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "githubsecret",
+							},
+							Key: "accesstoken",
+						},
+					},
+					SecretToken: sources.SecretValueFromSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "githubsecret",
+							},
+							Key: "secrettoken",
+						},
+					},
+					Sink: &corev1.ObjectReference{
+							Name:       taskname,
+							Kind:       "Service",
+							APIVersion: "serving.knative.dev/v1alpha1",
+				},
 			},
-		},
-	}}
+		}}
 	*/
 }
 

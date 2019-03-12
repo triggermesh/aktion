@@ -68,7 +68,7 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 				repoPipeline := createPipelineResource(repo, config)
 
 				fmt.Println("---")
-				GenerateOutput(repoPipeline)
+				fmt.Print(GenerateOutput(repoPipeline))
 				fmt.Println("---")
 			}
 
@@ -82,7 +82,7 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 					fmt.Printf("%s", GenerateOutput(CreateTask(tasks)))
 
 					if taskrun {
-						fmt.Printf("---%s\n", GenerateOutput(taskRun))
+						fmt.Printf("---\n%s", GenerateOutput(taskRun))
 					}
 				}
 			}
