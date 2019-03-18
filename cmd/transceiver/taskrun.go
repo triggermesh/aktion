@@ -30,6 +30,7 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
+//TaskRunCreator handles TaskRun objects creation
 type TaskRunCreator struct{}
 
 func (trc TaskRunCreator) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -29,6 +29,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
+//ConfigSet contains configurations from available configuration file or from in-cluster environment
 type ConfigSet struct {
 	Core     *kubernetes.Clientset
 	Pipeline *pipelineApi.Clientset
@@ -36,6 +37,7 @@ type ConfigSet struct {
 	Config *rest.Config
 }
 
+//ConfigPath returns path to a valid config file
 func ConfigPath(cfgFile string) string {
 	homeDir := "."
 	if dir := os.Getenv("HOME"); dir != "" {

@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+//NewParserCmd creates new parser command to Parse the workflow into a JSON file
 func NewParserCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "parser",

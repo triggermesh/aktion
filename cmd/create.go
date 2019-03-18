@@ -41,6 +41,7 @@ var (
 	kubeNamespace           string
 )
 
+//Task represents Task object
 type Task struct {
 	Identifier string
 	Image      string
@@ -50,11 +51,13 @@ type Task struct {
 	EnvFrom    []corev1.EnvFromSource
 }
 
+//Tasks groups Task objects by one Identifier
 type Tasks struct {
 	Identifier string
 	Task       []Task
 }
 
+//NewCreateCmd creates new create command
 func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
@@ -192,6 +195,7 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 	return append(tasks, task)
 }
 
+//CreateTaskRun function creates TaskRun object
 func CreateTaskRun(name string) pipeline.TaskRun {
 	taskRun := pipeline.TaskRun{
 		Spec: pipeline.TaskRunSpec{
@@ -223,6 +227,7 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	return taskRun
 }
 
+//CreateTask creates Task object
 func CreateTask(tasks Tasks) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{

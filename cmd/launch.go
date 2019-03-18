@@ -30,6 +30,7 @@ var (
 	taskname string
 )
 
+//NewLaunchCmd creates Launch command
 func NewLaunchCmd() *cobra.Command {
 	launchCmd := &cobra.Command{
 		Use:   "launch",
@@ -45,6 +46,8 @@ func NewLaunchCmd() *cobra.Command {
 
 	return launchCmd
 }
+
+//CreateGithubSource creates Github source based on provided Task name
 func CreateGithubSource(taskname string) string {
 	return ""
 	/*
@@ -85,6 +88,7 @@ func CreateGithubSource(taskname string) string {
 	*/
 }
 
+//CreateTransceiver creates Transceiver object
 func CreateTransceiver(taskname string) string {
 	return ""
 	/*
