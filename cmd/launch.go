@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	//	corev1 "k8s.io/api/core/v1"
-	//	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//	sources "github.com/knative/eventing-sources/pkg/apis/sources/v1alpha1"
-	//	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	sources "github.com/knative/eventing-sources/pkg/apis/sources/v1alpha1"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 var (
@@ -49,8 +49,6 @@ func NewLaunchCmd() *cobra.Command {
 
 //CreateGithubSource creates Github source based on provided Task name
 func CreateGithubSource(taskname string) string {
-	return ""
-	/*
 			return sources.GitHubSource{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "GitHubSource",
@@ -85,13 +83,10 @@ func CreateGithubSource(taskname string) string {
 				},
 			},
 		}}
-	*/
 }
 
 //CreateTransceiver creates Transceiver object
 func CreateTransceiver(taskname string) string {
-	return ""
-	/*
 		return serving.Service{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Service",
@@ -102,5 +97,4 @@ func CreateTransceiver(taskname string) string {
 			},
 			Spec: serving.ServiceSpec{
 		}
-	*/
 }
