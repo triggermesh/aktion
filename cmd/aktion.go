@@ -41,11 +41,13 @@ var aktionCmd = &cobra.Command{
 	Version: version,
 }
 
+//Panic is a wrapper to format pannic messages
 func Panic(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, args...)
 	os.Exit(1)
 }
 
+//GenerateOutput turns any data of type json or yaml into a string, panic otherwise
 func GenerateOutput(data interface{}) string {
 	var output []byte
 	var err error
@@ -67,6 +69,7 @@ func GenerateOutput(data interface{}) string {
 	return fmt.Sprintf("%s", output)
 }
 
+//ParseData parses Github Action Workflow File into Configuration object
 func ParseData() *model.Configuration {
 	f, err := os.Open(filename)
 
@@ -83,6 +86,7 @@ func ParseData() *model.Configuration {
 	return config
 }
 
+//Execute launches aktion command
 func Execute() {
 	if err := aktionCmd.Execute(); err != nil {
 		Panic("Error: %s\n", err)
