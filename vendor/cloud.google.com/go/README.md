@@ -71,12 +71,12 @@ Google API                                   | Status       | Package
 [Monitoring][cloud-monitoring]               | alpha        | [`cloud.google.com/go/monitoring/apiv3`][cloud-monitoring-ref]
 [OS Login][cloud-oslogin]                    | alpha        | [`cloud.google.com/compute/docs/oslogin/rest`][cloud-oslogin-ref]
 [Pub/Sub][cloud-pubsub]                      | stable       | [`cloud.google.com/go/pubsub`][cloud-pubsub-ref]
-[Memorystore][cloud-memorystore]             | stable       | [`cloud.google.com/go/redis/apiv1beta1`][cloud-memorystore-ref]
+[Memorystore][cloud-memorystore]             | alpha        | [`cloud.google.com/go/redis/apiv1`][cloud-memorystore-ref]
 [Spanner][cloud-spanner]                     | stable       | [`cloud.google.com/go/spanner`][cloud-spanner-ref]
 [Speech][cloud-speech]                       | stable       | [`cloud.google.com/go/speech/apiv1`][cloud-speech-ref]
 [Storage][cloud-storage]                     | stable       | [`cloud.google.com/go/storage`][cloud-storage-ref]
-[Text To Speech][cloud-texttospeech]         | alpha        | [`cloud.google.com/go/texttospeech/apiv1`][cloud-storage-ref]
-[Trace][cloud-trace]                         | alpha        | [`cloud.google.com/go/trace/apiv2`][cloud-translation-ref]
+[Text To Speech][cloud-texttospeech]         | alpha        | [`cloud.google.com/go/texttospeech/apiv1`][cloud-texttospeech-ref]
+[Trace][cloud-trace]                         | alpha        | [`cloud.google.com/go/trace/apiv2`][cloud-trace-ref]
 [Translation][cloud-translation]             | stable       | [`cloud.google.com/go/translate`][cloud-translation-ref]
 [Video Intelligence][cloud-video]            | alpha        | [`cloud.google.com/go/videointelligence/apiv1beta1`][cloud-video-ref]
 [Vision][cloud-vision]                       | stable       | [`cloud.google.com/go/vision/apiv1`][cloud-vision-ref]
@@ -479,7 +479,7 @@ for more information.
 
 [cloud-memorystore]: https://cloud.google.com/memorystore/
 [cloud-memorystore-docs]: https://cloud.google.com/memorystore/docs
-[cloud-memorystore-ref]: https://godoc.org/cloud.google.com/go/redis/apiv1beta1
+[cloud-memorystore-ref]: https://godoc.org/cloud.google.com/go/redis/apiv1
 
 [cloud-texttospeech]: https://cloud.google.com/texttospeech/
 [cloud-texttospeech-docs]: https://cloud.google.com/texttospeech/docs
@@ -487,7 +487,7 @@ for more information.
 
 [cloud-trace]: https://cloud.google.com/trace/
 [cloud-trace-docs]: https://cloud.google.com/trace/docs
-[cloud-trace-ref]: https://godoc.org/cloud.google.com/go/trace/apiv1
+[cloud-trace-ref]: https://godoc.org/cloud.google.com/go/trace/apiv2
 
 [cloud-dialogflow]: https://cloud.google.com/dialogflow-enterprise/
 [cloud-dialogflow-docs]: https://cloud.google.com/dialogflow-enterprise/docs/

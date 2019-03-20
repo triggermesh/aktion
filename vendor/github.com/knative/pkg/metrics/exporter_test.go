@@ -66,13 +66,14 @@ func getResourceLabelValue(key string, tags []tag.Tag) string {
 
 func TestMain(m *testing.M) {
 	resetCurPromSrv()
-	// Set gcpMetadataFunc for testing
+	// Set gcpMetadataFunc and newStackdriverExporterFunc for testing
 	gcpMetadataFunc = fakeGcpMetadataFun
+	newStackdriverExporterFunc = newFakeExporter
 	os.Exit(m.Run())
 }
 
 func TestMetricsExporter(t *testing.T) {
-	err := newMetricsExporter(&metricsConfig{
+	_, err := newMetricsExporter(&metricsConfig{
 		domain:               servingDomain,
 		component:            testComponent,
 		backendDestination:   "unsupported",
@@ -81,7 +82,7 @@ func TestMetricsExporter(t *testing.T) {
 		t.Errorf("Expected an error for unsupported backend %v", err)
 	}
 
-	err = newMetricsExporter(&metricsConfig{
+	_, err = newMetricsExporter(&metricsConfig{
 		domain:               servingDomain,
 		component:            testComponent,
 		backendDestination:   Stackdriver,
@@ -93,7 +94,7 @@ func TestMetricsExporter(t *testing.T) {
 
 func TestInterlevedExporters(t *testing.T) {
 	// First create a stackdriver exporter
-	err := newMetricsExporter(&metricsConfig{
+	_, err := newMetricsExporter(&metricsConfig{
 		domain:               servingDomain,
 		component:            testComponent,
 		backendDestination:   Stackdriver,
@@ -103,7 +104,7 @@ func TestInterlevedExporters(t *testing.T) {
 	}
 	expectNoPromSrv(t)
 	// Then switch to prometheus exporter
-	err = newMetricsExporter(&metricsConfig{
+	_, err = newMetricsExporter(&metricsConfig{
 		domain:               servingDomain,
 		component:            testComponent,
 		backendDestination:   Prometheus,
@@ -113,7 +114,7 @@ func TestInterlevedExporters(t *testing.T) {
 	}
 	expectPromSrv(t)
 	// Finally switch to stackdriver exporter
-	err = newMetricsExporter(&metricsConfig{
+	_, err = newMetricsExporter(&metricsConfig{
 		domain:               servingDomain,
 		component:            testComponent,
 		backendDestination:   Stackdriver,
