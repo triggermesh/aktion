@@ -69,6 +69,27 @@ func GenerateOutput(data interface{}) string {
 	return fmt.Sprintf("%s", output)
 }
 
+// Create an object break for json and yaml files
+func GenerateObjBreak(first bool) string {
+	if outputType == "yaml" {
+		return "---\n"
+	} else if outputType == "json" && !first {
+		return ",\n"
+	} else if outputType == "json" && first {
+		return "["
+	} else {
+		return "\n"
+	}
+}
+
+func GenerateObjLastBreak() string {
+	if outputType == "json" {
+		return "]"
+	} else {
+		return ""
+	}
+}
+
 //ParseData parses Github Action Workflow File into Configuration object
 func ParseData() *model.Configuration {
 	f, err := os.Open(filename)

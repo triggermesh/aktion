@@ -70,9 +70,9 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 			if repo != "" {
 				repoPipeline := createPipelineResource(repo, config)
 
-				fmt.Println("---")
+				fmt.Printf("%s", GenerateObjBreak(true))
 				fmt.Print(GenerateOutput(repoPipeline))
-				fmt.Println("---")
+				fmt.Printf("%s", GenerateObjBreak(false))
 			}
 
 			for _, act := range config.Workflows {
@@ -85,10 +85,13 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 					fmt.Printf("%s", GenerateOutput(CreateTask(tasks)))
 
 					if taskrun {
-						fmt.Printf("---\n%s", GenerateOutput(taskRun))
+						fmt.Printf("%s", GenerateObjBreak(false))
+						fmt.Printf("%s", GenerateOutput(taskRun))
 					}
 				}
 			}
+
+			fmt.Printf("%s", GenerateObjLastBreak())
 		},
 	}
 
