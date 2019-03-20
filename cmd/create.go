@@ -33,7 +33,6 @@ import (
 
 var (
 	event                   string
-	repo                    string
 	registry                string
 	taskrun                 bool
 	visitedActionDependency map[string]bool
@@ -58,7 +57,7 @@ type Tasks struct {
 }
 
 //NewCreateCmd creates new create command
-func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
+func NewCreateCmd(kubeConfig *string, ns *string, repository *string) *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Convert the Github Action workflow into a Tekton Task list",
@@ -66,6 +65,7 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 			config := ParseData()
 			visitedActionDependency = make(map[string]bool)
 			namespace = *ns
+			repo = *repository
 
 			if repo != "" {
 				repoPipeline := createPipelineResource(repo, config)
@@ -80,9 +80,9 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 				tasks := extractTasks(act.Identifier, config)
 
 				if applyPipelineFlag {
-					applyPipeline(*kubeConfig, taskRun, CreateTask(tasks))
+					applyPipeline(*kubeConfig, taskRun, CreateTask(tasks, repo))
 				} else {
-					fmt.Printf("%s", GenerateOutput(CreateTask(tasks)))
+					fmt.Printf("%s", GenerateOutput(CreateTask(tasks, repo)))
 
 					if taskrun {
 						fmt.Printf("%s", GenerateObjBreak(false))
@@ -95,7 +95,6 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 		},
 	}
 
-	createCmd.Flags().StringVarP(&repo, "repo", "", "", "Upstream git repository")
 	createCmd.Flags().StringVarP(&registry, "registry", "r", "knative.registry.svc.cluster.local", "Default docker registry")
 	createCmd.Flags().BoolVarP(&taskrun, "taskrun", "t", false, "Flag to create TaskRun")
 	createCmd.Flags().BoolVarP(&applyPipelineFlag, "apply", "a", false, "Apply the generated Tekton pipeline to the user's kubernetes cluster")
@@ -231,7 +230,7 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 }
 
 //CreateTask creates Task object
-func CreateTask(tasks Tasks) pipeline.Task {
+func CreateTask(tasks Tasks, repo string) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",
