@@ -39,14 +39,14 @@ func NewLaunchCmd(repository *string) *cobra.Command {
 			repo = *repository
 
 			if repo != "" {
-			    fmt.Printf("%s", GenerateObjBreak(true))
+				fmt.Printf("%s", GenerateObjBreak(true))
 				fmt.Print(GenerateOutput(CreateGithubSource(taskname, repo)))
-			    fmt.Printf("%s", GenerateObjBreak(false))
+				fmt.Printf("%s", GenerateObjBreak(false))
 				fmt.Print(GenerateOutput(CreateTransceiver(taskname)))
-			    fmt.Printf("%s", GenerateObjLastBreak())
+				fmt.Printf("%s", GenerateObjLastBreak())
 			}
 			/*
-			TODO handle empty repository way better
+				TODO handle empty repository way better
 			*/
 		},
 	}
@@ -61,38 +61,38 @@ func CreateGithubSource(taskname string, repo string) sources.GitHubSource {
 	var tname = "taskrun-transceiver-"
 	tname += taskname
 	return sources.GitHubSource{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "GitHubSource",
-					APIVersion: sources.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: taskname,
-				},
-				Spec: sources.GitHubSourceSpec{
-					OwnerAndRepository : repo,
-					EventTypes: []string{"push"},
-					AccessToken: sources.SecretValueFromSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "githubsecret",
-							},
-							Key: "accessToken",
-						},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "GitHubSource",
+			APIVersion: sources.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: taskname,
+		},
+		Spec: sources.GitHubSourceSpec{
+			OwnerAndRepository: repo,
+			EventTypes:         []string{"push"},
+			AccessToken: sources.SecretValueFromSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "githubsecret",
 					},
-					SecretToken: sources.SecretValueFromSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "githubsecret",
-							},
-							Key: "secretToken",
-						},
-					},
-					Sink: &corev1.ObjectReference{
-							Name:       tname,
-							Kind:       "Service",
-							APIVersion: "serving.knative.dev/v1alpha1",
-					},
+					Key: "accessToken",
 				},
+			},
+			SecretToken: sources.SecretValueFromSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "githubsecret",
+					},
+					Key: "secretToken",
+				},
+			},
+			Sink: &corev1.ObjectReference{
+				Name:       tname,
+				Kind:       "Service",
+				APIVersion: "serving.knative.dev/v1alpha1",
+			},
+		},
 	}
 }
 
@@ -101,34 +101,33 @@ func CreateTransceiver(taskname string) serving.Service {
 	var tname = "taskrun-transceiver-"
 	tname += taskname
 	return serving.Service{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Service",
-				APIVersion: "serving.knative.dev/v1alpha1",
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "serving.knative.dev/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: tname,
+			Labels: map[string]string{
+				"serving.knative.dev/visibility": "cluster-local",
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: tname,
-				Labels: map[string]string{
-					"serving.knative.dev/visibility": "cluster-local",
-					},
-			},
-			Spec: serving.ServiceSpec{
-				RunLatest: &serving.RunLatestType{
-					Configuration: serving.ConfigurationSpec{
-						RevisionTemplate: serving.RevisionTemplateSpec{
-							Spec: serving.RevisionSpec{
-								Container: corev1.Container{
-									Image: "gcr.io/triggermesh/transceiver-60a15ebeaf09df9f7ef1bd5f51a22549:latest",
-									Env: []corev1.EnvVar{
-										{
-											Name: "TASK_NAME",
-											Value: taskname,
-										},
-										{
-											Name: "NAMESPACE",
-											ValueFrom: &corev1.EnvVarSource{
-												FieldRef: &corev1.ObjectFieldSelector{
-													FieldPath: "metadata.namespace",
-												},
+		},
+		Spec: serving.ServiceSpec{
+			RunLatest: &serving.RunLatestType{
+				Configuration: serving.ConfigurationSpec{
+					RevisionTemplate: serving.RevisionTemplateSpec{
+						Spec: serving.RevisionSpec{
+							Container: corev1.Container{
+								Image: "gcr.io/triggermesh/transceiver-60a15ebeaf09df9f7ef1bd5f51a22549:latest",
+								Env: []corev1.EnvVar{
+									{
+										Name:  "TASK_NAME",
+										Value: taskname,
+									},
+									{
+										Name: "NAMESPACE",
+										ValueFrom: &corev1.EnvVarSource{
+											FieldRef: &corev1.ObjectFieldSelector{
+												FieldPath: "metadata.namespace",
 											},
 										},
 									},
@@ -138,5 +137,6 @@ func CreateTransceiver(taskname string) serving.Service {
 					},
 				},
 			},
+		},
 	}
 }
