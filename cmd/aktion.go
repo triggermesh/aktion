@@ -33,6 +33,7 @@ var (
 	outputType string
 	kubeConfig string
 	namespace  string
+	repo       string
 )
 
 var aktionCmd = &cobra.Command{
@@ -108,10 +109,11 @@ func init() {
 	aktionCmd.PersistentFlags().StringVarP(&outputType, "output", "o", "yaml", "Output type for the results (json|yaml)")
 	aktionCmd.PersistentFlags().StringVarP(&kubeConfig, "kubeconfig", "k", "", "Kubernetes config file")
 	aktionCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "Kubernetes namespace")
+	aktionCmd.PersistentFlags().StringVarP(&repo, "git", "g", "", "Git repository")
 	aktionCmd.AddCommand(versionCmd)
 	aktionCmd.AddCommand(NewParserCmd())
-	aktionCmd.AddCommand(NewCreateCmd(&kubeConfig, &namespace))
-	aktionCmd.AddCommand(NewLaunchCmd())
+	aktionCmd.AddCommand(NewCreateCmd(&kubeConfig, &namespace, &repo))
+	aktionCmd.AddCommand(NewLaunchCmd(&repo))
 }
 
 func initConfig() {
