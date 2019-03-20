@@ -18,20 +18,12 @@
 # [[override]]
 #   name = "github.com/x/y"
 #   version = "2.4.0"
-#
-# [prune]
-#   non-go = false
-#   go-tests = true
-#   unused-packages = true
+
 
 
 [[constraint]]
   name = "github.com/actions/workflow-parser"
   version = "1.0.0"
-
-[[constraint]]
-  name = "github.com/aws/aws-lambda-go"
-  version = "1.9.0"
 
 [[constraint]]
   name = "github.com/ghodss/yaml"
@@ -49,22 +41,14 @@
   name = "gopkg.in/yaml.v2"
   version = "2.2.2"
 
-[[constraint]]
+[[override]]
   name = "k8s.io/api"
   version = "kubernetes-1.11.3"
 
-[[constraint]]
+[[override]]
   name = "k8s.io/apimachinery"
   version = "kubernetes-1.11.3"
 
-[[constraint]]
+[[override]]
   name = "k8s.io/client-go"
   version = "kubernetes-1.11.3"
-
-[prune]
-  go-tests = true
-  unused-packages = true
-
-[[constraint]]
-  name = "github.com/tektoncd/pipeline"
-  version = "0.1.0"

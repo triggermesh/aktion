@@ -13,7 +13,7 @@ spec:
             image: github.com/triggermesh/aktion/cmd/transceiver
             env:
               - name: TASK_NAME
-                value: "hello"
+                value: "knative-test"
               - name: NAMESPACE
                 valueFrom:
                   fieldRef:

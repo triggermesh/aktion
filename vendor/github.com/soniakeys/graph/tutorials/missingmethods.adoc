@@ -1,0 +1,136 @@
+= Missing Methods
+
+A number of methods you might expect are deliberately not implemented.
+In general, if something is directly available in the data representation
+or if the required code is trivial, you are expected to just write the code
+directly in you Go application.  This may sound harsh and unfriendly but
+the expectation is that you have some minimal competence in Go.
+
+Most significantly you should understand Go slices.  This library implements
+the basic graph types with slices and you are encouraged to operate directly
+on the underlying slices.
+
+The following lists functions and methods you might expect but are deliberately
+not implemented in the library.
+
+== Constructors, like NewAdjacencyList
+An AdjacencyList is just a slice.  Use make.  To make a graph with 10 nodes
+use `make(AdjacenclyList, 10)`.  For a Directed,
+`graph.Directed{make(graph.AdjacenclyList, 10)}`.
+
+== HasNode
+The set of nodes in AdjacencyList g is simply the range of valid slice indexes
+for g.  For a non-negative NI n, check if the graph already includes it with
+`int(n) < len(g)`.
+
+== ArcsFrom, successors
+For AdjacencyList g, the list of "successor" nodes, or nodes you can reach
+following arcs from node n is `g[n]`.  It's a slice.  g is a slice of slices.
+
+Note that if you want a *copy* of this list to modify without disturbing
+the graph, you copy it just like any other slice.  If you like one-liners
+there's `append([]NI{}, g[n]...)`.  Otherwise,
+
+[source,go]
+----
+c := make([]NI, len(g[n]))
+copy(c, g[n])
+----
+
+For Undirected u, "neighbors" or nodes at edges from n are
+`u.AdjacencyList[n]`.
+
+== Unique neighbors
+You might consider "neighbors" to be _unique_ neighbor nodes _distinct from n_.
+In more complex cases where loops or parallel edges can be present, you'll
+have to handle these as approriate in your code.  If you wanted to collect this
+set of unique neighbors for example you might use a map and write
+
+[source,go]
+----
+nb := map[NI]bool
+for _, to := range g[n] {
+	if to != n {
+		nb[to] = true
+	}
+}
+----
+
+This is pretty basic logic for collecting a set and this library presumes you
+can write code like this as you need it.  Before you cut and paste this code
+though, is it really best for you?  Do you really have both loops and parallel
+edges to skip?  Do you really need to skip them?  Do you really need to collect
+them in a data structure in memory or do you simply need to iterate over them?
+Is a map even the best data structure for you?  The library can't guess at
+these and provide a capability that handles all cases efficiently or even
+simply.  It's simpler for you to write a few lines of code.
+
+== OutDegree
+For node n of Adjacencylist g, the out degree is `len(g[n])`.  Thus for
+Directed d, it's `len(d.AdjacencyList[n])`.
+
+== AdjacencyList.InDegree
+`InDegree` is defined on Directed but not AdjacencyList.  This is to keep it
+out of the method set for Undirected where the term "in-degree" is not
+meaningful.  If you have only AdjacencyList g, compute in-degrees with
+`Directed{g}.InDegree()`.
+
+== AdjacencyList.IsDirected
+Many graph libraries have a common type for both directed and undirected
+and have some flag or property to tell which.  This library has separate
+types, Directed and Undirected, to convey this information.  The underlying
+AdjacencyList representation does not have this information.  It fine to work
+with AdjacencyLists, but in this case, you should know if your data is
+directed graph or not.  If you have an AdjacenclyList that just arrived from
+somewhere and you don't know how to treat it, you're doing something wrong.
+
+There is `AdjacencyList.IsUndirected`, but this is best seen as as a validation
+method to validate that data expected to represent an undirected graph is
+well formed.  It is meaningful for example to have a directed graph that just
+happens to have reciprocals for all arcs.
+
+== AddNode
+To grow AdjacencyList g by one node, the next available node number will be
+`graph.NI(len(g))`.  Add it with `g = append(g, nil)`.  The implementation
+of append makes it efficient to do this repeatedly.
+
+== AddArc
+To add arc from `fr` to `to` in AdjacencyList g,
+
+1.  know that int(fr) < len(g).
+2.  `g[fr] = append(g[fr], to)`
+
+There's Undirected.AddEdge but no AdjacencyList.AddArc.  AddEdge exists with
+reservation.  The doc on it notes that it may have overhead of resizing and
+suggests preallocating.  Still, it's useful and the code is complex enough to
+seem justified.  A similar AddArc could be written but seems overkill.
+In the two steps above, you will often know the first without having to do
+any checks.  Then it's just append.
+
+== Arcs, to get all arcs, like Undirected.Edges
+The Adjacency list is compact and easy to traverse.  For example,
+
+[source,go]
+----
+for fr, toList := range g {
+    for _, to := range toList {
+        fmt.Println("arc:", fr, to)
+        // or you know, collect the arcs in some other data structure
+    }
+}
+----
+
+Undirected.Edges is not quite so trivial because reciprocal arcs must be
+matched up so this method is provided.
+
+== Undirected.ParallelEdges, like AdjacencyList.ParallelArcs
+ParallelArcs will find parallel edges, it just doesn't find the neighbor
+indexes of the reciprocals, which wouldn't be needed in many cases.
+
+== LabeledUndirected.SimpleEdges
+It's not clear what would be done with parallel edges with different labels.
+The action would be specific to the use-case.
+
+== Undirected.ArcsAsEdges
+The labeled version of this method is kind of specialized helper for Kruskal.
+A use case for an unlabeled version is hard to imagine.

@@ -33,7 +33,6 @@ import (
 
 var (
 	event                   string
-	repo                    string
 	registry                string
 	revision 				string
 	taskrun                 bool
@@ -76,7 +75,7 @@ type Tasks struct {
 }
 
 //NewCreateCmd creates new create command
-func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
+func NewCreateCmd(kubeConfig *string, ns *string, repository *string) *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Convert the Github Action workflow into a Tekton Task list",
@@ -84,6 +83,7 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 			config := ParseData()
 			visitedActionDependency = make(map[string]bool)
 			namespace = *ns
+			repo = *repository
 
 			/* CAB: This will need to be refactored to account for pipeline revamping */
 			/*
@@ -102,9 +102,9 @@ func NewCreateCmd(kubeConfig *string, ns *string) *cobra.Command {
 				pipelineRun := CreatePipelineRun(act.Identifier)
 
 				if applyPipelineFlag {
-					applyPipeline(*kubeConfig, taskRun, CreateTask(tasks))
+					applyPipeline(*kubeConfig, taskRun, CreateTask(tasks, repo))
 				} else {
-					fmt.Printf("%s", GenerateOutput(CreateTask(tasks)))
+					fmt.Printf("%s", GenerateOutput(CreateTask(tasks, repo)))
 
 					if taskrun {
 						fmt.Printf("---\n%s", GenerateOutput(taskRun))
@@ -303,7 +303,7 @@ func CreatePipelineRun(name string) pipeline.PipelineRun {
 }
 
 //CreateTask creates Task object
-func CreateTask(tasks Tasks) pipeline.Task {
+func CreateTask(tasks Tasks, repo string) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",

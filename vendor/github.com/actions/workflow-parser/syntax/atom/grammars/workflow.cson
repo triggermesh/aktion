@@ -1,0 +1,191 @@
+# If this is your first time writing a language grammar, check out:
+#   - https://flight-manual.atom.io/hacking-atom/sections/creating-a-grammar/
+
+'scopeName': 'source.workflow'
+'name': 'Workflow'
+'fileTypes': [
+  'workflow'
+]
+
+'patterns': [
+  {
+    'include': '#value'
+  }
+]
+
+'repository':
+  'constant':
+    'match': '\\b(?:true|false)\\b'
+    'name': 'constant.language.workflow'
+
+  'number':
+    'match': '-?(?=[1-9]|0(?!\\d))\\d+(\\.\\d+)?([eE][+-]?\\d+)?'
+    'name': 'constant.numeric.workflow'
+
+  'kwString':
+    'match': '''(?x)\\b
+                (action|runs|args|needs|uses|env|secrets|
+                workflow|on|resolves)\\b
+             '''
+    'name': 'keyword.workflow'
+
+  'variable':
+    'match': '\\b(?:[\\w\\d_-]+)\\b'
+    'name': 'variable.other.normal.workflow'
+
+  'string':
+    'begin': '"'
+    'beginCaptures':
+      '0':
+        'name': 'punctuation.definition.string.begin.workflow'
+    'end': '"'
+    'endCaptures':
+      '0':
+        'name': 'punctuation.definition.string.end.workflow'
+    'name': 'string.quoted.double.workflow'
+    'patterns': [
+      {
+        'match': '''(?x:                # turn on extended mode
+                    \\\\                # a literal backslash
+                    (?:                 # ...followed by...
+                    ["\\\\/bfnrt]       # one of these characters
+                    |                   # ...or...
+                    u                   # a u
+                    [0-9a-fA-F]{4}      # and four hex digits
+                    )
+                    )'''
+        'name': 'constant.character.escape.workflow'
+      }
+      {
+        'match': '\\\\.'
+        'name': 'invalid.illegal.unrecognized-string-escape.workflow'
+      }
+      { 'include': '#interpolation' }
+    ]
+
+  'array':
+    'begin': '\\['
+    'beginCaptures':
+      '0':
+        'name': 'punctuation.definition.array.begin.workflow'
+    'end': '\\]'
+    'endCaptures':
+      '0':
+        'name': 'punctuation.definition.array.end.workflow'
+    'name': 'meta.structure.array.workflow'
+    'patterns': [
+      {
+        'include': '#value'
+      }
+      {
+        'match': ','
+        'name': 'punctuation.separator.array.workflow'
+      }
+      {
+        'match': '[^\\s\\]]'
+        'name': 'invalid.illegal.expected-array-separator.workflow'
+      }
+    ]
+
+  'object':
+    'begin': '\\{'
+    'beginCaptures':
+      '0':
+        'name': 'punctuation.definition.dictionary.begin.workflow'
+    'end': '\\}'
+    'endCaptures':
+      '0':
+        'name': 'punctuation.definition.dictionary.end.workflow'
+    'name': 'meta.structure.dictionary.workflow'
+    'patterns': [
+      {
+        'include': '#comment'
+      }
+      {
+        'include': '#string'
+      }
+      {
+        'include': '#kwString'
+      }
+      {
+        'begin': '='
+        'beginCaptures':
+          '0':
+            'name': 'punctuation.separator.dictionary.key-value.workflow'
+        'end': '(,)|(?=\\})'
+        'endCaptures':
+          '1':
+            'name': 'punctuation.separator.dictionary.pair.workflow'
+        'name': 'meta.structure.dictionary.value.workflow'
+        'patterns': [
+          {
+            'include': '#value'
+          }
+        ]
+      }
+      {
+        'match': '[^\\s\\}]'
+        'name': 'invalid.illegal.expected-dictionary-separator.workflow'
+      }
+    ]
+
+  'comment':
+    'begin': '(^[ \\t]+)?(?=(#|//))'
+    'beginCaptures':
+      '1':
+        'name': 'punctuation.whitespace.comment.leading.workflow'
+    'end': '(?!\\G)'
+    'patterns': [
+      {
+        'begin': '//'
+        'beginCaptures':
+          '0':
+            'name': 'punctuation.definition.comment.workflow'
+        'end': '\\n'
+        'name': 'comment.line.double-slash.workflow'
+      }
+      {
+        'begin': '#'
+        'beginCaptures':
+          '0':
+            'name': 'punctuation.definition.comment.workflow'
+        'end': '\\n'
+        'name': 'comment.line.pound.workflow'
+      }
+    ]
+
+  'interpolation':
+    'begin': '\\$\\{'
+    'beginCaptures':
+      '0':
+        'name': 'punctuation.section.embedded.workflow'
+    'end': '\\}'
+    'endCaptures':
+      '0':
+        'name': 'punctuation.section.embedded.workflow'
+    'name': 'variable.other.normal.workflow'
+
+  'value':
+    'patterns': [
+      {
+        'include': '#constant'
+      }
+      {
+        'include': '#number'
+      }
+      {
+        'include': '#kwString'
+      }
+      {
+        'include': '#string'
+      }
+      {
+        'include': '#array'
+      }
+      {
+        'include': '#object'
+      }
+      {
+        'include': '#comment'
+      }
+    ]
