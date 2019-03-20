@@ -29,7 +29,7 @@ aktion create -f samples/main.workflow
 To specify which git repository this should apply to:
 
 ```
-aktion create -f samples/main.workflow --repo https://github.com/sebgoa/klr-demo
+aktion create -f samples/main.workflow --git https://github.com/sebgoa/klr-demo
 ```
 
 You can pipe it directly to `kubectl` to create the actions:
@@ -37,6 +37,16 @@ You can pipe it directly to `kubectl` to create the actions:
 ```
 aktion create -f samples/main.workflow | kubectl apply -f -
 ```
+
+To launch the actions you need a Knative GitHub source and a _transceiver_ which will receive the GitHub event and create a `TaskRun` object that will execute the `Task` specified. Like this:
+
+```
+aktion launch --task knative-test --git sebgoa/cloudbuild
+```
+
+## ASCIICAST
+
+[![asciicast](https://asciinema.org/a/235121.svg)](https://asciinema.org/a/235121)
 
 ## Support
 
