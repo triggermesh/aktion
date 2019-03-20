@@ -1,0 +1,8 @@
+bazel-*
+*~
+.idea/
+.vscode/
+.DS_Store
+cover.out
+bin/
+*.swp
