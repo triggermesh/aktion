@@ -20,10 +20,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	sources "github.com/knative/eventing-sources/pkg/apis/sources/v1alpha1"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 var (
@@ -49,52 +45,10 @@ func NewLaunchCmd() *cobra.Command {
 
 //CreateGithubSource creates Github source based on provided Task name
 func CreateGithubSource(taskname string) string {
-			return sources.GitHubSource{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "GitHubSource",
-					APIVersion: sources.SchemeGroupVersion.String(),
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "foo",
-				},
-				Spec: sources.GitHubSourceSpec{
-					OwnerAndRepository : "sebgoa/foo",
-					EventTypes: []string{"push"},
-					AccessToken: sources.SecretValueFromSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "githubsecret",
-							},
-							Key: "accesstoken",
-						},
-					},
-					SecretToken: sources.SecretValueFromSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "githubsecret",
-							},
-							Key: "secrettoken",
-						},
-					},
-					Sink: &corev1.ObjectReference{
-							Name:       taskname,
-							Kind:       "Service",
-							APIVersion: "serving.knative.dev/v1alpha1",
-				},
-			},
-		}}
+	return ""
 }
 
 //CreateTransceiver creates Transceiver object
 func CreateTransceiver(taskname string) string {
-		return serving.Service{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Service",
-				APIVersion: "serving.knative.dev/v1alpha1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "foo",
-			},
-			Spec: serving.ServiceSpec{
-		}
+	return ""
 }

@@ -1,0 +1,81 @@
+= Anecote
+
+Here are some timings, termed "anecdotal" because they are single runs of
+methods over single random data sets.  More convincing would be to use the
+benchmark capabilities of the testing library and to test over a greater
+number of graphs.  But that is tedious.  This is quick and dirty.
+
+This is (yet another) work in progress.  It covers only a few methods.
+It has already proven valuable though in showing some basic capacities
+(and also illuminating some problems!)
+
+Below is output from a sample run:
+
+....
+Anecdotal timings
+linux amd64
+
+Random graph generation
+(arcs/edges lists arcs for directed graphs, edges for undirected)
+Graph type                Nodes  Arcs/edges           Time
+Chung Lu (undirected)       10K   49K          22.295873ms
+Chung Lu (undirected)      200K   27M         3.306262789s
+Euclidean (directed)       1.0K  5.0K             880.61µs
+Euclidean (directed)       1.0M  5.0M         1.640114892s
+Geometric (undirected)     1.0K   14K           6.639848ms
+Geometric (undirected)      30K  140K         4.421220575s
+Gnp directed               1.0K  100K           4.393283ms
+Gnp directed                20K   19M         798.120249ms
+Gnp undirected             1.0K   99K           5.429077ms
+Gnp undirected              20K   20M           1.2374245s
+Gnm directed               1.0K  100K          35.710577ms
+Gnm directed                20K   20M          5.44915849s
+Gnm undirected             1.0K  100K          16.044223ms
+Gnm undirected              20K   20M         6.190043934s
+Gnm3 undirected            1.0K  100K           18.04302ms
+Gnm3 undirected             20K   20M         8.547999617s
+Kronecker directed         1.5K   12K           8.815785ms
+Kronecker directed          94K  2.5M         3.904553518s
+Kronecker undirected       1.5K   11K           7.640889ms
+Kronecker undirected        94K  2.4M         5.189660681s
+
+Properties
+Method                 Graph                          Time
+Connected Components   ChungLu 10K nds          2.700921ms
+Connected Components   ChungLu 200K nds       341.589606ms
+SCC path based         Euclidean 1.0K nds        129.029µs
+SCC path based         Euclidean 1.0M nds     518.286652ms
+SCC Pearce             Euclidean 1.0K nds        169.551µs
+SCC Pearce             Euclidean 1.0M nds     337.487082ms
+SCC Tarjan             Euclidean 1.0K nds         222.04µs
+SCC Tarjan             Euclidean 1.0M nds     449.002526ms
+
+Traversal
+Method                 Graph                                          Time
+DepthFirst             ChungLu giant component 10.0K nds        2.311187ms
+DepthFirst             ChungLu giant component 200K nds       497.116607ms
+BreadthFirst           ChungLu giant component 10.0K nds         900.545µs
+BreadthFirst           ChungLu giant component 200K nds       119.814565ms
+BreadthFirst2          ChungLu giant component 10.0K nds        1.413648ms
+BreadthFirst2          ChungLu giant component 200K nds       154.937394ms
+
+Shortest path all pairs
+Method                 Graph                                          Time
+Floyd-Warshall         Euclidean 1.0K nds                     1.429651474s
+Floyd-Warshall         Geometric 1.0K nds                     1.392797048s
+
+Single source shortest path
+Method                 Graph                                          Time
+Bellman-Ford           Euclidean giant component 1.0K nds        445.786µs
+Dijkstra all paths     Geometric 1.0K nds                        665.296µs
+Dijkstra all paths     Geometric 30K nds                       15.004497ms
+
+Single shortest path
+Method                 Graph                                          Time
+Dijkstra single path   Geometric 1.0K nds                        109.686µs
+Dijkstra single path   Geometric 30K nds                        1.643191ms
+AStarA                 Geometric 1.0K nds                         22.919µs
+AStarA                 Geometric 30K nds                         307.947µs
+AStarM                 Geometric 1.0K nds                         19.834µs
+AStarM                 Geometric 30K nds                         309.677µs
+....
