@@ -19,6 +19,8 @@ package cmd
 import (
 	"fmt"
 
+	sources "github.com/knative/eventing-sources/pkg/apis/sources/v1alpha1"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -44,11 +46,11 @@ func NewLaunchCmd() *cobra.Command {
 }
 
 //CreateGithubSource creates Github source based on provided Task name
-func CreateGithubSource(taskname string) string {
-	return ""
+func CreateGithubSource(taskname string) sources.GitHubSource {
+	return sources.GitHubSource{}
 }
 
 //CreateTransceiver creates Transceiver object
-func CreateTransceiver(taskname string) string {
-	return ""
+func CreateTransceiver(taskname string) serving.Service {
+	return serving.Service{}
 }
