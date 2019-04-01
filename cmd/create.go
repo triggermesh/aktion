@@ -32,14 +32,12 @@ import (
 )
 
 var (
-	event                   string
 	registry                string
 	revision 				string
 	taskrun                 bool
 	visitedActionDependency map[string]bool
-	pipelineResources       map[string]bool
+	pipelineResources       map[string]*Image
 	applyPipelineFlag       bool
-	kubeNamespace           string
 )
 
 type ImageConst int
@@ -61,7 +59,7 @@ type Image struct {
 //Task represents Task object
 type Task struct {
 	Identifier string
-	Image      Image
+	Image      *Image
 	Cmd        []string
 	Args       []string
 	Envs       []corev1.EnvVar
@@ -82,6 +80,7 @@ func NewCreateCmd(kubeConfig *string, ns *string, repository *string) *cobra.Com
 		Run: func(cmd *cobra.Command, args []string) {
 			config := ParseData()
 			visitedActionDependency = make(map[string]bool)
+			pipelineResources = make(map[string]*Image)
 			namespace = *ns
 			repo = *repository
 
@@ -97,20 +96,31 @@ func NewCreateCmd(kubeConfig *string, ns *string, repository *string) *cobra.Com
 			*/
 
 			for _, act := range config.Workflows {
-				taskRun := CreateTaskRun(act.Identifier)
 				tasks := extractTasks(act.Identifier, config)
+				primaryPipeline := CreatePipeline(tasks, act.Identifier, repo)
 				pipelineRun := CreatePipelineRun(act.Identifier)
 
 				if applyPipelineFlag {
-					applyPipeline(*kubeConfig, taskRun, CreateTask(tasks, repo))
+					applyPipeline(*kubeConfig, primaryPipeline, pipelineRun, CreateTask(tasks, repo))
 				} else {
-					fmt.Printf("%s", GenerateOutput(CreateTask(tasks, repo)))
-
-					if taskrun {
-						fmt.Printf("---\n%s", GenerateOutput(taskRun))
+					for _,v := range pipelineResources {
+						fmt.Printf("%s", GenerateOutput(createPipelineResource(*v, true)))
+						fmt.Printf("---\n")
+						fmt.Printf("%s", GenerateOutput(createPipelineResource(*v, false)))
+						fmt.Printf("---\n")
+						fmt.Printf("%s", GenerateOutput(CreateBuildTask(*v)))
+						fmt.Printf("---\n")
 					}
 
-					fmt.Printf("---\n%s", GenerateOutput(pipelineRun))
+					fmt.Printf("%s", GenerateOutput(CreateTask(tasks, repo)))
+
+					fmt.Printf("---\n")
+					fmt.Printf("%s", GenerateOutput(primaryPipeline))
+
+					if taskrun {
+						//fmt.Printf("---\n%s", GenerateOutput(taskRun))
+						fmt.Printf("---\n%s", GenerateOutput(pipelineRun))
+					}
 				}
 			}
 		},
@@ -125,11 +135,34 @@ func NewCreateCmd(kubeConfig *string, ns *string, repository *string) *cobra.Com
 	return createCmd
 }
 
-func applyPipeline(kubeConfig string, taskRun pipeline.TaskRun, tasks pipeline.Task) {
+// will need to add a lot more to the generation
+func applyPipeline(kubeConfig string, primaryPipeline pipeline.Pipeline, pipelineRun pipeline.PipelineRun, tasks pipeline.Task) {
 	// add if check for taskrun to build/inject the task
 	clientSet, err := client.NewClient(client.ConfigPath(kubeConfig))
 	if err != nil {
 		Panic("Error connecting to kubernetes cluster: %s\n", err)
+	}
+
+	// Apply resources
+	for _, v := range pipelineResources {
+		srcResource := createPipelineResource(*v, true)
+		imgResource := createPipelineResource(*v, false)
+		buildTask := CreateBuildTask(*v)
+
+		_, err = clientSet.Pipeline.TektonV1alpha1().PipelineResources(namespace).Create(&srcResource)
+		if err != nil {
+			Panic("Unable to create source reference resource: %s\n", err)
+		}
+
+		_, err = clientSet.Pipeline.TektonV1alpha1().PipelineResources(namespace).Create(&imgResource)
+		if err != nil {
+			Panic("Unable to create source reference image: %s\n", err)
+		}
+
+		_, err = clientSet.Pipeline.TektonV1alpha1().Tasks(namespace).Create(&buildTask)
+		if err != nil {
+			Panic("Unable to create build task: %s\n", err)
+		}
 	}
 
 	_, err = clientSet.Pipeline.TektonV1alpha1().Tasks(namespace).Create(&tasks)
@@ -137,10 +170,15 @@ func applyPipeline(kubeConfig string, taskRun pipeline.TaskRun, tasks pipeline.T
 		Panic("Unable to create tasks: %s\n", err)
 	}
 
+	_, err = clientSet.Pipeline.TektonV1alpha1().Pipelines(namespace).Create(&primaryPipeline)
+	if err != nil {
+		Panic("Unable to create primary pipeline: %s\n", err)
+	}
+
 	if taskrun {
-		_, err = clientSet.Pipeline.TektonV1alpha1().TaskRuns(namespace).Create(&taskRun)
+		_, err = clientSet.Pipeline.TektonV1alpha1().PipelineRuns(namespace).Create(&pipelineRun)
 		if err != nil {
-			Panic("Unable to create task run: %s\n", err)
+			Panic("Unable to create pipeline run: %s\n", err)
 		}
 	}
 }
@@ -181,24 +219,40 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 	}
 
 	if strings.HasPrefix(action.Uses.String(), "docker://") {
-		task.Image = Image{
+		task.Image = &Image{
 			Type: DOCKER,
 			Path: strings.TrimPrefix(action.Uses.String(), "docker://"),
 		}
 	} else if strings.HasPrefix(action.Uses.String(), "./") {
 		if len(repo) == 0 {
 			Panic("The repo flag must be specified to use the action: %s\n", action.Identifier)
-		}
+		} else if pipelineResources[convertUsesName(action.Uses.String())] != nil {
+			task.Image = pipelineResources[convertUsesName(action.Uses.String())]
+		} else {
+			task.Image = &Image{
+				Type: LOCAL,
+				Path: strings.TrimPrefix(action.Uses.String(), "./"),
+				BuildTaskName: convertUsesName(action.Uses.String()),
+			}
 
-		task.Image = Image{
-			Type: LOCAL,
-			Path: strings.TrimPrefix(action.Uses.String(), "./"),
+			task.Image.PipelineResourceSource = createPipelineResource(*task.Image, true)
+			task.Image.PipelineResourceImage = createPipelineResource(*task.Image, false)
+			pipelineResources[convertUsesName(action.Uses.String())] = task.Image
 		}
 	} else if strings.Contains(action.Uses.String(), "@") {
 		/* TODO: Should this use the repo flag, or do we need a new flag to reflect another repo? */
-		task.Image = Image{
-			Type: GIT,
-			Path: "github.com/" + action.Uses.String(),
+		if pipelineResources[convertUsesName(action.Uses.String())] != nil {
+			task.Image = pipelineResources[convertUsesName(action.Uses.String())]
+		} else {
+			task.Image = &Image{
+				Type: GIT,
+				Path: "github.com/" + action.Uses.String(),
+				BuildTaskName: convertUsesName(action.Uses.String()),
+			}
+
+			task.Image.PipelineResourceSource = createPipelineResource(*task.Image, true)
+			task.Image.PipelineResourceImage = createPipelineResource(*task.Image, false)
+			pipelineResources[convertUsesName(action.Uses.String())] = task.Image
 		}
 	} else {
 		Panic("The image %s for %s is unsupported\n", action.Uses.String(), action.Identifier)
@@ -271,7 +325,80 @@ func CreateTaskRun(name string) pipeline.TaskRun {
 	return taskRun
 }
 
-// TODO: Will need to feed in the PipelineResources as well
+// CreatePipeline Generates the pipeline and associated tasks
+func CreatePipeline(tasks Tasks, name string, repo string) pipeline.Pipeline {
+	line := pipeline.Pipeline{
+		TypeMeta: metav1.TypeMeta{
+			Kind:	"Pipeline",
+			APIVersion: "tekton.dev/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              convertName(name + "-pipeline"),
+			CreationTimestamp: metav1.Time{time.Now()},
+		},
+	}
+
+	// TODO: Do we want to apply the custom resource definition for defined repos?
+
+	specResources := make([]pipeline.PipelineDeclaredResource, 0)
+	specTasks := make([]pipeline.Task, 0)
+	specPipelineTask := make([]pipeline.PipelineTask, 0)
+
+	for _, v  := range pipelineResources {
+		srcResource := pipeline.PipelineDeclaredResource{
+			Name: v.PipelineResourceSource.ObjectMeta.Name,
+			Type: v.PipelineResourceSource.Spec.Type,
+		}
+
+		imgResource := pipeline.PipelineDeclaredResource{
+			Name: v.PipelineResourceImage.ObjectMeta.Name,
+			Type: v.PipelineResourceImage.Spec.Type,
+		}
+
+		specResources = append(specResources, srcResource)
+		specResources = append(specResources, imgResource)
+		buildTask := CreateBuildTask(*v)
+		specTasks = append(specTasks, buildTask)
+
+		pipelineBuildTask := pipeline.PipelineTask{
+			Name: "pipeline-build-" + buildTask.Name,
+			TaskRef: pipeline.TaskRef{
+				Name: buildTask.Name,
+			},
+			Resources: &pipeline.PipelineTaskResources{
+				Inputs: []pipeline.PipelineTaskInputResource{{
+					Name: "workspace",
+					Resource: v.PipelineResourceSource.ObjectMeta.Name,
+				}},
+				Outputs: []pipeline.PipelineTaskOutputResource{{
+					Name: "image",
+					Resource: v.PipelineResourceImage.ObjectMeta.Name,
+				}},
+			},
+			Params: []pipeline.Param{{
+				Name: "pathToContext",
+				Value: "/workspace/" + convertName(name) + "/" + extractRepoPath(v.Path),
+			}},
+		}
+
+		specPipelineTask = append(specPipelineTask, pipelineBuildTask)
+	}
+
+	task := CreateTask(tasks, repo)
+	primaryPipelineTask := pipeline.PipelineTask{
+		Name: task.Name,
+		TaskRef: pipeline.TaskRef{
+			Name: task.Name,
+		},
+	}
+	specPipelineTask = append(specPipelineTask, primaryPipelineTask)
+
+	line.Spec.Resources = specResources
+	line.Spec.Tasks = specPipelineTask
+
+	return line
+}
+
 func CreatePipelineRun(name string) pipeline.PipelineRun {
 	pipelineRun := pipeline.PipelineRun{
 		Spec: pipeline.PipelineRunSpec{
@@ -334,42 +461,6 @@ func CreateTask(tasks Tasks, repo string) pipeline.Task {
 
 	return task
 }
-
-/*
-func createPipelineResource(repo string, config *model.Configuration) pipeline.PipelineResource {
-
-	// Hack: Get the first worklow in the list to get a name
-	workflow := config.Workflows[0]
-	resource := pipeline.PipelineResource{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "PipelineResource",
-			APIVersion: "tekton.dev/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: convertName(workflow.Identifier),
-		},
-	}
-
-	inputparams := make([]pipeline.Param, 0)
-
-	inputparams = append(inputparams, pipeline.Param{
-		Name:  "revision",
-		Value: "master",
-	})
-
-	inputparams = append(inputparams, pipeline.Param{
-		Name:  "url",
-		Value: repo,
-	})
-
-	resourcespec := pipeline.PipelineResourceSpec{
-		Type:   "git",
-		Params: inputparams,
-	}
-	resource.Spec = resourcespec
-	return resource
-}
-*/
 
 // Given the github-action repo designation of org/repo/path..., return just the org/repo portion
 func extractRepoPrefix(repo string) string {
@@ -439,7 +530,15 @@ func createPipelineResource(image Image, resourceType bool) pipeline.PipelineRes
 		var url string
 
 		if image.Type == LOCAL {
-			url = repo
+			hasVersion := strings.IndexAny(repo, "@")
+			if hasVersion == -1 {
+				url = repo
+				revision = "master"
+			} else {
+				components := strings.Split(repo, "@")
+				url = components[0]
+				revision = components[1]
+			}
 		} else if image.Type == GIT {
 			// TODO: If repo is passed as an argument, do we use that to override this?
 			url = "https://github.com/" + extractRepoPrefix(image.Path)
@@ -475,51 +574,58 @@ func createPipelineResource(image Image, resourceType bool) pipeline.PipelineRes
 		}
 	}
 
-	pipelineResources[resourceName] = true
 	return resource
 }
 
-// Create a new image creation task based on the meta action and the image repo
-/*
-func createResourceTask(task Task) pipeline.Task {
-	image := task.Image
-	image.BuildTaskName = convertName(tasks.Identifier + "-build-image")
+// CreateBuildTask create a task to clone a git repo and use Kaniko to build the docker image
+func CreateBuildTask(image Image) pipeline.Task {
 	task := pipeline.Task{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Task",
 			APIVersion: "tekton.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: image.BuildTaskName,
+			Name: "build-" + convertName(image.BuildTaskName),
 		},
 	}
 
-	// As per the Tekton Pipeline Documentation, all git repos will be cloned to: /workspace/task_resource_name
-	// targetPath can be specified however directory creation will need to be done by hand
-
-
-
-	var taskSpec pipeline.TaskSpec
-	steps := make([]corev1.Container, 0)
-
-	if repo != "" {
-		taskSpec.Inputs = &pipeline.Inputs{
+	// CAB: The pathToDocker and pathToContext get set in the pipeline when calling taskRef
+	task.Spec = pipeline.TaskSpec{
+		Inputs: &pipeline.Inputs{
 			Resources: []pipeline.TaskResource{{
-				Name: convertName(tasks.Identifier) + "-repo",
-				Type: "git",
+				Name: image.BuildTaskName + "-git",
+				Type: pipeline.PipelineResourceTypeGit,
 			}},
-		}
+			Params: []pipeline.TaskParam{
+				{
+					Name: "pathToDockerFile",
+					Default: "Dockerfile",
+				},
+				{
+					Name: "pathToContext",
+				},
+			},
+		},
+		Outputs: &pipeline.Outputs{
+			Resources: []pipeline.TaskResource{{
+				Name: image.BuildTaskName + "-image",
+				Type: pipeline.PipelineResourceTypeImage,
+			}},
+		},
+		Steps: []corev1.Container{{
+			Name:    "build-and-push-" + convertName(image.BuildTaskName),
+			Image:   "gcr.io/kaniko-project/executor",
+			Command: []string{"/kaniko/executor"},
+			Args: []string{
+				"--dockerfile=${inputs.params.pathToDockerFile}",
+				"--destination=${outputs.resources.builtImage.url}",
+				"--context=${inputs.params.pathToContext}",
+			},
+		}},
 	}
-
-	for _, t := range tasks.Task {
-		steps = append(steps, createContainer(t))
-	}
-	taskSpec.Steps = steps
-	task.Spec = taskSpec
 
 	return task
 }
-*/
 
 func createContainer(task Task) corev1.Container {
 	return corev1.Container{
@@ -534,5 +640,16 @@ func createContainer(task Task) corev1.Container {
 
 func convertName(name string) string {
 	n := strings.Replace(name, " ", "-", -1)
+	return strings.ToLower(n)
+}
+
+// Convert the workflow Uses entry to a common name that can be referenced
+func convertUsesName(name string) string {
+	n := strings.Split(name, "@")[0]
+	n = strings.Replace(n, "/", "-", -1)
+	n = strings.Replace(n, ".", "-", -1)
+	n = strings.Replace(n, "--", "-", -1)
+	n = strings.TrimPrefix(n, "-")
+
 	return strings.ToLower(n)
 }
