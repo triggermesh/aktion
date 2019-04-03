@@ -33,7 +33,7 @@ import (
 
 var (
 	registry                string
-	revision 				string
+	revision				string
 	taskrun                 bool
 	visitedActionDependency map[string]bool
 	pipelineResources       map[string]*Image
@@ -89,9 +89,9 @@ func NewCreateCmd(kubeConfig *string, ns *string, repository *string) *cobra.Com
 			if repo != "" {
 				repoPipelineResource := createPipelineResource(repo, config)
 
-				fmt.Println("---")
+				fmt.Printf("%s", GenerateObjBreak(true))
 				fmt.Print(GenerateOutput(repoPipelineResource))
-				fmt.Println("---")
+				fmt.Printf("%s", GenerateObjBreak(false))
 			}
 			*/
 
@@ -105,24 +105,27 @@ func NewCreateCmd(kubeConfig *string, ns *string, repository *string) *cobra.Com
 				} else {
 					for _,v := range pipelineResources {
 						fmt.Printf("%s", GenerateOutput(createPipelineResource(*v, true)))
-						fmt.Printf("---\n")
+				        fmt.Printf("%s", GenerateObjBreak(false))
 						fmt.Printf("%s", GenerateOutput(createPipelineResource(*v, false)))
-						fmt.Printf("---\n")
+				        fmt.Printf("%s", GenerateObjBreak(false))
 						fmt.Printf("%s", GenerateOutput(CreateBuildTask(*v)))
-						fmt.Printf("---\n")
+				        fmt.Printf("%s", GenerateObjBreak(false))
 					}
 
 					fmt.Printf("%s", GenerateOutput(CreateTask(tasks, repo)))
 
-					fmt.Printf("---\n")
+				    fmt.Printf("%s", GenerateObjBreak(false))
 					fmt.Printf("%s", GenerateOutput(primaryPipeline))
 
 					if taskrun {
 						//fmt.Printf("---\n%s", GenerateOutput(taskRun))
-						fmt.Printf("---\n%s", GenerateOutput(pipelineRun))
+				        fmt.Printf("%s", GenerateObjBreak(false))
+						fmt.Printf("%s", GenerateOutput(pipelineRun))
 					}
 				}
 			}
+
+			fmt.Printf("%s", GenerateObjLastBreak())
 		},
 	}
 
