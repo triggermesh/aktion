@@ -124,6 +124,10 @@ func CreateTransceiver(taskname string) serving.Service {
 										Value: taskname,
 									},
 									{
+										Name:  "TASKRUN_CONFIGMAP",
+										Value: taskname,
+									},
+									{
 										Name: "NAMESPACE",
 										ValueFrom: &corev1.EnvVarSource{
 											FieldRef: &corev1.ObjectFieldSelector{
