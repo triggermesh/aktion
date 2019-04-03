@@ -22,10 +22,10 @@ import (
 
 	//v1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	//tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
+	yaml "github.com/ghodss/yaml"
 	v1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -68,9 +68,10 @@ func createTaskRuns() ([]byte, error) {
 
 	log.Info("Created Tekton client: ", tekton)
 
-	simpleTaskrun, taskruns := v1alpha1.TaskRun{}, []v1alpha1.TaskRun{}
+	var taskruns []v1alpha1.TaskRun
 	// if TASKRUN_CONFIGMAP env variable is set, try to parse its content into taskruns list
 	if taskrunConfigmap, ok := os.LookupEnv("TASKRUN_CONFIGMAP"); ok {
+		log.Infof("Reading taskruns from configmap %q", taskrunConfigmap)
 		core, err := kubernetes.NewForConfig(c)
 		if err != nil {
 			return []byte{}, err
@@ -79,14 +80,17 @@ func createTaskRuns() ([]byte, error) {
 		if err != nil {
 			return []byte{}, err
 		}
-		taskruns, _ = taskrunsFromConfigmaps(namespace, configmap)
+		taskruns, err = taskrunsFromConfigmaps(namespace, configmap)
+		if err != nil {
+			return []byte{}, err
+		}
 	}
 
 	// if TASK_NAME env variable is set, generate simple taskrun with TASK_NAME referrence
 	if taskRefName, ok := os.LookupEnv("TASK_NAME"); ok {
-		simpleTaskrun = taskRunWithTaskRef(namespace, taskRefName)
+		log.Infof("Generating taskrun with taskRef %q", taskRefName)
+		taskruns = append(taskruns, taskRunWithTaskRef(namespace, taskRefName))
 	}
-	taskruns = append(taskruns, simpleTaskrun)
 
 	// iterate over taskruns list and create its items
 	var result []*v1alpha1.TaskRun
@@ -95,8 +99,8 @@ func createTaskRuns() ([]byte, error) {
 		if err != nil {
 			return []byte{}, err
 		}
+		log.Infof("Created %s TaskRun object in Kubernetes API", tr.Name)
 		result = append(result, tr)
-		log.Infof("Created %s TaskRun object in Kubernetes API\n", tr.Name)
 	}
 
 	return yaml.Marshal(result)
