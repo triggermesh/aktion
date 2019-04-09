@@ -1,4 +1,4 @@
-workflow "knative test" {
+workflow "Tekton test" {
   on = "push"
   resolves = [
     "First Action",

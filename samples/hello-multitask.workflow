@@ -1,4 +1,4 @@
-workflow "multi-action secret test" {
+workflow "hello multi-action test" {
   on = "push"
   resolves = [
     "First Action",
@@ -7,17 +7,19 @@ workflow "multi-action secret test" {
 
 action "First Action" {
   uses = "docker://centos"
-  needs = "With Secrets"
+  needs = "Second Action"
   runs = "echo"
   env = {
     FOO = "BAR"
   }
   args = "Hello world"
-  secrets = ["BAR", "BAZ"]
 }
 
-action "With Secrets" {
+action "Second Action" {
   uses = "docker://centos"
   runs = "echo"
-  secrets = ["FOO", "BAR"]
+  args = [
+    "tekton",
+    "pipeline"
+  ]
 }

@@ -1,4 +1,4 @@
-workflow "knative test" {
+workflow "secrets test" {
   on = "push"
   resolves = [
     "First Action",

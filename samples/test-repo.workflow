@@ -1,4 +1,4 @@
-workflow "knative test" {
+workflow "github repo test" {
   on = "push"
   resolves = [
     "First Action",
@@ -6,7 +6,7 @@ workflow "knative test" {
 }
 
 action "First Action" {
-  uses = "cab105/test-repo@master"
+  uses = "cab105/aktion/samples/images@master"
   runs = "echo"
   env = {
     FOO = "BAR"

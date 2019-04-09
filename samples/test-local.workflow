@@ -1,8 +1,8 @@
-workflow "knative test" {
+workflow "local repo test" {
   on = "push"
   resolves = [
     "First Action",
-  ] 
+  ]
 }
 
 action "First Action" {
