@@ -127,7 +127,7 @@ func NewCreateCmd(kubeConfig *string, ns *string, gitRepository *string) *cobra.
 	}
 
 	createCmd.Flags().StringVarP(&revision, "revision", "", "master", "Upstream repository revision, branch, or tag")
-	createCmd.Flags().StringVarP(&registry, "registry", "r", "http://knative.registry.svc.cluster.local", "Default docker registry")
+	createCmd.Flags().StringVarP(&registry, "registry", "r", "knative.registry.svc.cluster.local", "Default docker registry")
 	createCmd.Flags().BoolVarP(&pipelinerun, "pipelinerun", "p", false, "Flag to create PipelineRun")
 	createCmd.Flags().BoolVarP(&applyPipelineFlag, "apply", "a", false, "Apply the generated Tekton pipeline to the user's kubernetes cluster")
 
@@ -406,6 +406,25 @@ func createPipeline(tasks Tasks, name string, repo string) pipeline.Pipeline {
 }
 
 func createPipelineRun(name string) pipeline.PipelineRun {
+	// setup the resource run bindings
+	resourceBindings := make([]pipeline.PipelineResourceBinding, 0)
+
+	for _, v := range pipelineResources {
+		resourceBindings = append(resourceBindings, pipeline.PipelineResourceBinding{
+			Name: v.PipelineResourceImage.Name,
+			ResourceRef: pipeline.PipelineResourceRef{
+				Name: v.PipelineResourceImage.Name,
+			},
+		})
+
+		resourceBindings = append(resourceBindings, pipeline.PipelineResourceBinding{
+			Name: v.PipelineResourceSource.Name,
+			ResourceRef: pipeline.PipelineResourceRef{
+				Name: v.PipelineResourceSource.Name,
+			},
+		})
+	}
+
 	pipelineRun := pipeline.PipelineRun{
 		Spec: pipeline.PipelineRunSpec{
 			PipelineRef: pipeline.PipelineRef{
@@ -414,6 +433,7 @@ func createPipelineRun(name string) pipeline.PipelineRun {
 			Trigger: pipeline.PipelineTrigger{
 				Type: pipeline.PipelineTriggerTypeManual,
 			},
+			Resources: resourceBindings,
 		},
 	}
 
@@ -655,7 +675,7 @@ func createBuildTask(image Image) pipeline.Task {
 	task.Spec = pipeline.TaskSpec{
 		Inputs: &pipeline.Inputs{
 			Resources: []pipeline.TaskResource{{
-				Name: image.BuildTaskName + "-git",
+				Name: "workspace",
 				Type: pipeline.PipelineResourceTypeGit,
 			}},
 			Params: []pipeline.TaskParam{
@@ -670,7 +690,7 @@ func createBuildTask(image Image) pipeline.Task {
 		},
 		Outputs: &pipeline.Outputs{
 			Resources: []pipeline.TaskResource{{
-				Name: image.BuildTaskName + "-image",
+				Name: "image",
 				Type: pipeline.PipelineResourceTypeImage,
 			}},
 		},
@@ -680,7 +700,7 @@ func createBuildTask(image Image) pipeline.Task {
 			Command: []string{"/kaniko/executor"},
 			Args: []string{
 				"--dockerfile=${inputs.params.pathToDockerFile}",
-				"--destination=${outputs.resources.builtImage.url}",
+				"--destination=${outputs.resources.image.url}",
 				"--context=${inputs.params.pathToContext}",
 			},
 		}},

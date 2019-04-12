@@ -6,7 +6,7 @@ workflow "local repo test" {
 }
 
 action "First Action" {
-  uses = "./docker-action"
+  uses = "./samples/test-images"
   runs = "echo"
   env = {
     FOO = "BAR"
