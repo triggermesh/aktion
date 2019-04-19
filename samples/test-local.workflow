@@ -1,12 +1,12 @@
-workflow "Tekton test" {
+workflow "local repo test" {
   on = "push"
   resolves = [
     "First Action",
-  ] 
+  ]
 }
 
 action "First Action" {
-  uses = "docker://centos"
+  uses = "./samples/test-images"
   runs = "echo"
   env = {
     FOO = "BAR"

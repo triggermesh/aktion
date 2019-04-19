@@ -1,4 +1,4 @@
-workflow "Tekton test" {
+workflow "github repo test" {
   on = "push"
   resolves = [
     "First Action",
@@ -6,7 +6,7 @@ workflow "Tekton test" {
 }
 
 action "First Action" {
-  uses = "docker://centos"
+  uses = "triggermesh/aktion/samples/images@master"
   runs = "echo"
   env = {
     FOO = "BAR"
