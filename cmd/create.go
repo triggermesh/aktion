@@ -87,7 +87,7 @@ func NewCreateCmd(kubeConfig *string, ns *string, gitRepository *string) *cobra.
 			for _, act := range config.Workflows {
 				tasks := extractTasks(act.Identifier, config)
 				primaryPipeline := createPipeline(tasks, act.Identifier, repo)
-				pipelineRun := createPipelineRun(act.Identifier)
+				pipelineRun := createPipelineRun(act.Identifier, repo, act.Identifier)
 				pipelineRepo := createRepoPipelineResource(repo, act.Identifier, config)
 
 				if applyPipelineFlag {
@@ -397,15 +397,29 @@ func createPipeline(tasks Tasks, name string, repo string) pipeline.Pipeline {
 			Name: task.Name,
 		},
 	}
-	specPipelineTask = append(specPipelineTask, primaryPipelineTask)
 
+	if repo != "" {
+		specResources = append(specResources, pipeline.PipelineDeclaredResource{
+			Name: convertName(name),
+			Type: pipeline.PipelineResourceTypeGit,
+		})
+
+		primaryPipelineTask.Resources = &pipeline.PipelineTaskResources{
+			Inputs: []pipeline.PipelineTaskInputResource{{
+				Name:     convertName(name),
+				Resource: convertName(name),
+			}},
+		}
+	}
+
+	specPipelineTask = append(specPipelineTask, primaryPipelineTask)
 	line.Spec.Resources = specResources
 	line.Spec.Tasks = specPipelineTask
 
 	return line
 }
 
-func createPipelineRun(name string) pipeline.PipelineRun {
+func createPipelineRun(name string, repo string, workflowName string) pipeline.PipelineRun {
 	// setup the resource run bindings
 	resourceBindings := make([]pipeline.PipelineResourceBinding, 0)
 
@@ -421,6 +435,15 @@ func createPipelineRun(name string) pipeline.PipelineRun {
 			Name: v.PipelineResourceSource.Name,
 			ResourceRef: pipeline.PipelineResourceRef{
 				Name: v.PipelineResourceSource.Name,
+			},
+		})
+	}
+
+	if repo != "" {
+		resourceBindings = append(resourceBindings, pipeline.PipelineResourceBinding{
+			Name: convertName(workflowName),
+			ResourceRef: pipeline.PipelineResourceRef{
+				Name: convertName(workflowName),
 			},
 		})
 	}
@@ -512,7 +535,7 @@ func extractRepoPath(repo string) string {
 	path := strings.Split(repo, "@")[0]
 
 	if strings.Count(path, "/") == 1 {
-		return "/"
+		return ""
 	}
 
 	return strings.TrimPrefix(path, extractRepoPrefix(path))
