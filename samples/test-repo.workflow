@@ -6,7 +6,7 @@ workflow "github repo test" {
 }
 
 action "First Action" {
-  uses = "triggermesh/aktion/samples/images@master"
+  uses = "triggermesh/aktion/samples/test-images@master"
   runs = "echo"
   env = {
     FOO = "BAR"

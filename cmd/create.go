@@ -383,7 +383,7 @@ func createPipeline(tasks Tasks, name string, repo string) pipeline.Pipeline {
 			},
 			Params: []pipeline.Param{{
 				Name:  "pathToContext",
-				Value: "/workspace/" + convertName(name) + "/" + extractRepoPath(v.Path),
+				Value: "/workspace/workspace/" + extractRepoPath(v.Path, v.Type),
 			}},
 		}
 
@@ -515,30 +515,34 @@ func createTask(tasks Tasks, repo string) pipeline.Task {
 func extractRepoPrefix(repo string) string {
 	basedir := strings.Split(repo, "@")[0]
 
-	/*
-		if strings.Count(path, "/") == 1 {
-			return path
-		}
+	if strings.Count(basedir, "/") == 1 {
+		return basedir
+	}
 
-		components := strings.Split(path, "/")
+	paths := strings.Split(basedir, "/")
 
-		// FIXME: Array index out of range
+	return strings.Join(paths[3:], "/")
+}
 
-		return components[0] + "/" + strings.Split(components[1], "@")[0]
-	*/
+func extractRepoSuffix(repo string) string {
+	basedir := strings.Split(repo, "@")[0]
 
-	return basedir
+	if strings.Count(basedir, "/") == 1 {
+		return basedir
+	}
+
+	paths := strings.Split(basedir, "/")
+
+	return strings.Join(paths[0:3], "/")
 }
 
 // Given the github-action repo designation of org/repo/path..., return just the path portion
-func extractRepoPath(repo string) string {
-	path := strings.Split(repo, "@")[0]
-
-	if strings.Count(path, "/") == 1 {
-		return ""
+func extractRepoPath(repo string, repoType ImageConst) string {
+	if repoType == LOCAL {
+		return repo
 	}
 
-	return strings.TrimPrefix(path, extractRepoPrefix(path))
+	return extractRepoPrefix(repo)
 }
 
 // Extract the provided hash, branch, tag. Default to "master" if one is not provided
@@ -596,7 +600,7 @@ func createPipelineResource(image Image, resourceType bool) pipeline.PipelineRes
 			}
 		} else if image.Type == GIT {
 			// TODO: If repo is passed as an argument, do we use that to override this?
-			url = "https://" + extractRepoPrefix(image.Path)
+			url = "https://" + extractRepoSuffix(image.Path)
 			revision = extractRepoRevision(image.Path) // This is for the 3rd party repo being accessed
 		}
 
@@ -620,7 +624,7 @@ func createPipelineResource(image Image, resourceType bool) pipeline.PipelineRes
 		resourceParams = append(resourceParams,
 			pipeline.Param{
 				Name:  "url",
-				Value: registry + "/" + image.BuildTaskName,
+				Value: registry + "/" + image.BuildTaskName + "-image",
 			})
 
 		resource.Spec = pipeline.PipelineResourceSpec{
@@ -725,6 +729,9 @@ func createBuildTask(image Image) pipeline.Task {
 				"--dockerfile=${inputs.params.pathToDockerFile}",
 				"--destination=${outputs.resources.image.url}",
 				"--context=${inputs.params.pathToContext}",
+				"--insecure",
+				"--insecure-registry",
+				"--verbosity=debug", // DEBUG MODE
 			},
 		}},
 	}
