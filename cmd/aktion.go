@@ -93,6 +93,12 @@ func GenerateObjLastBreak() string {
 
 //ParseData parses Github Action Workflow File into Configuration object
 func ParseData() *model.Configuration {
+	if filename == "" {
+		fmt.Printf("Error: --filename must be specified\n\n")
+		_ = aktionCmd.Usage()
+		os.Exit(1)
+	}
+
 	f, err := os.Open(filename)
 
 	if err != nil {
@@ -103,7 +109,7 @@ func ParseData() *model.Configuration {
 	if err != nil {
 		Panic("Error parsing file: %s\n", err)
 	}
-	f.Close()
+	_ = f.Close()
 
 	return config
 }
@@ -126,7 +132,7 @@ var versionCmd = &cobra.Command{
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	aktionCmd.PersistentFlags().StringVarP(&filename, "filename", "f", "main.workflow", "Github Action Workflow File")
+	aktionCmd.PersistentFlags().StringVarP(&filename, "filename", "f", "", "Github Action Workflow File")
 	aktionCmd.PersistentFlags().StringVarP(&outputType, "output", "o", "yaml", "Output type for the results (json|yaml)")
 	aktionCmd.PersistentFlags().StringVarP(&kubeConfig, "kubeconfig", "k", "", "Kubernetes config file")
 	aktionCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "Kubernetes namespace")
