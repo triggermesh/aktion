@@ -279,6 +279,14 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 			Value: v,
 		}
 
+		for i := range task.Args {
+			if strings.Contains(task.Args[i], "$" + k) {
+				task.Args[i] = strings.ReplaceAll(task.Args[i], "$" + k, "$(" + k + ")")
+			} else if strings.Contains(task.Args[i], "${" + k + "}") {
+				task.Args[i] = strings.ReplaceAll(task.Args[i], "${" + k + "}", "$(" + k + ")")
+			}
+		}
+
 		task.Envs = append(task.Envs, env)
 	}
 
