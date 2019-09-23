@@ -1,4 +1,5 @@
 GOCMD=go
+DEPCMD=dep
 VERSION=$(shell git describe --tags || echo "HEAD")
 GOBUILD=$(GOCMD) build -ldflags="-s -w -X github.com/triggermesh/aktion/cmd.version=$(VERSION)"
 GOCLEAN=$(GOCMD) clean
@@ -8,7 +9,10 @@ BINARY_OSX=$(BINARY_NAME)_osx
 
 .PHONY: all test clean run
 
-all: build test
+all: dep build test
+
+dep: Gopkg.lock Gopkg.toml
+	$(DEPCMD) ensure -update
 
 build: 
 	$(GOBUILD) -o $(BINARY_NAME) -v

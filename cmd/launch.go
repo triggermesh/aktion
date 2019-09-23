@@ -19,8 +19,8 @@ package cmd
 import (
 	"fmt"
 
-	sources "github.com/knative/eventing-sources/pkg/apis/sources/v1alpha1"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	sources "github.com/knative/eventing-contrib/github/pkg/apis/sources/v1alpha1"
+	serving "knative.dev/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -100,6 +100,35 @@ func CreateGithubSource(taskname string, repo string) sources.GitHubSource {
 func CreateTransceiver(taskname string) serving.Service {
 	var tname = "taskrun-transceiver-"
 	tname += taskname
+
+	serviceContainer := &corev1.Container{
+		Image: "gcr.io/triggermesh/transceiver-60a15ebeaf09df9f7ef1bd5f51a22549:latest",
+		Env: []corev1.EnvVar{
+			{
+				Name:  "TASK_NAME",
+				Value: taskname,
+			},
+			{
+				Name:  "TASKRUN_CONFIGMAP",
+				Value: taskname,
+			},
+			{
+				Name: "NAMESPACE",
+				ValueFrom: &corev1.EnvVarSource{
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: "metadata.namespace",
+					},
+				},
+			},
+		},
+	}
+
+	revisionSpec := &serving.RevisionTemplateSpec{
+		Spec: serving.RevisionSpec{
+			DeprecatedContainer: serviceContainer,
+		},
+	}
+
 	return serving.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -112,33 +141,9 @@ func CreateTransceiver(taskname string) serving.Service {
 			},
 		},
 		Spec: serving.ServiceSpec{
-			RunLatest: &serving.RunLatestType{
+			DeprecatedRunLatest: &serving.RunLatestType{
 				Configuration: serving.ConfigurationSpec{
-					RevisionTemplate: serving.RevisionTemplateSpec{
-						Spec: serving.RevisionSpec{
-							Container: corev1.Container{
-								Image: "gcr.io/triggermesh/transceiver-60a15ebeaf09df9f7ef1bd5f51a22549:latest",
-								Env: []corev1.EnvVar{
-									{
-										Name:  "TASK_NAME",
-										Value: taskname,
-									},
-									{
-										Name:  "TASKRUN_CONFIGMAP",
-										Value: taskname,
-									},
-									{
-										Name: "NAMESPACE",
-										ValueFrom: &corev1.EnvVarSource{
-											FieldRef: &corev1.ObjectFieldSelector{
-												FieldPath: "metadata.namespace",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
+					DeprecatedRevisionTemplate: revisionSpec,
 				},
 			},
 		},

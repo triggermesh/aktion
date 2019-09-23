@@ -26,7 +26,7 @@ import (
 
 	"github.com/triggermesh/aktion/pkg/client"
 
-	pipeline "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -306,39 +306,6 @@ func extractActions(action *model.Action, config *model.Configuration) []Task {
 	return append(tasks, task)
 }
 
-// createTaskRun function creates TaskRun object - This is considered a low-level
-// operation. Use PipelineRun instead
-func createTaskRun(name string) pipeline.TaskRun {
-	taskRun := pipeline.TaskRun{
-		Spec: pipeline.TaskRunSpec{
-			TaskRef: &pipeline.TaskRef{
-				Name: convertName(name),
-			},
-			Trigger: pipeline.TaskTrigger{
-				Type: pipeline.TaskTriggerTypeManual,
-			},
-		},
-	}
-
-	taskRun.SetDefaults()
-	taskRun.TypeMeta = metav1.TypeMeta{
-		Kind:       "TaskRun",
-		APIVersion: "tekton.dev/v1alpha1",
-	}
-
-	taskRun.ObjectMeta = metav1.ObjectMeta{
-		Name:              convertName(name),
-		CreationTimestamp: metav1.Time{time.Now()},
-	}
-
-	err := taskRun.Validate()
-	if err != nil {
-		Panic("Failed validation: %s\n", err)
-	}
-
-	return taskRun
-}
-
 // createPipeline Generates the pipeline and associated tasks
 func createPipeline(tasks Tasks, name string, repo string) pipeline.Pipeline {
 	line := pipeline.Pipeline{
@@ -391,7 +358,10 @@ func createPipeline(tasks Tasks, name string, repo string) pipeline.Pipeline {
 			},
 			Params: []pipeline.Param{{
 				Name:  "pathToContext",
-				Value: "/workspace/workspace/" + extractRepoPath(v.Path, v.Type),
+				Value: pipeline.ArrayOrString{
+					Type: pipeline.ParamTypeString,
+					StringVal: "/workspace/workspace/" + extractRepoPath(v.Path, v.Type),
+				},
 			}},
 		}
 
@@ -461,9 +431,6 @@ func createPipelineRun(name string, repo string, workflowName string) pipeline.P
 			PipelineRef: pipeline.PipelineRef{
 				Name: convertName(name + "-pipeline"),
 			},
-			Trigger: pipeline.PipelineTrigger{
-				Type: pipeline.PipelineTriggerTypeManual,
-			},
 			Resources: resourceBindings,
 		},
 	}
@@ -476,11 +443,6 @@ func createPipelineRun(name string, repo string, workflowName string) pipeline.P
 	pipelineRun.ObjectMeta = metav1.ObjectMeta{
 		Name:              convertName(name + "-pipeline-run"),
 		CreationTimestamp: metav1.Time{time.Now()},
-	}
-
-	err := pipelineRun.Validate()
-	if err != nil {
-		Panic("Failed validation for pipeline-run: %s\n", err)
 	}
 
 	return pipelineRun
@@ -499,14 +461,17 @@ func createTask(tasks Tasks, repo string) pipeline.Task {
 	}
 
 	var taskSpec pipeline.TaskSpec
-	steps := make([]corev1.Container, 0)
+	steps := make([]pipeline.Step, 0)
+
+	var repoResource pipeline.TaskResource
+	repoResource.Name = convertName(tasks.Identifier)
+	repoResource.Type = pipeline.PipelineResourceTypeGit
 
 	if repo != "" {
 		taskSpec.Inputs = &pipeline.Inputs{
-			Resources: []pipeline.TaskResource{{
-				Name: convertName(tasks.Identifier),
-				Type: "git",
-			}},
+			Resources: []pipeline.TaskResource{
+				repoResource,
+			},
 		}
 	}
 
@@ -589,7 +554,7 @@ func createPipelineResource(image Image, resourceType bool) pipeline.PipelineRes
 		},
 	}
 
-	resourceParams := make([]pipeline.Param, 0)
+	resourceParams := make([]pipeline.ResourceParam, 0)
 
 	if resourceType {
 		// There are two additional fields that need to be extracted from the
@@ -613,13 +578,13 @@ func createPipelineResource(image Image, resourceType bool) pipeline.PipelineRes
 		}
 
 		resourceParams = append(resourceParams,
-			pipeline.Param{
+			pipeline.ResourceParam{
 				Name:  "revision",
 				Value: revision,
 			})
 
 		resourceParams = append(resourceParams,
-			pipeline.Param{
+			pipeline.ResourceParam{
 				Name:  "url",
 				Value: url,
 			})
@@ -630,7 +595,7 @@ func createPipelineResource(image Image, resourceType bool) pipeline.PipelineRes
 		}
 	} else {
 		resourceParams = append(resourceParams,
-			pipeline.Param{
+			pipeline.ResourceParam{
 				Name:  "url",
 				Value: registry + "/" + image.BuildTaskName + "-image",
 			})
@@ -674,20 +639,20 @@ func createRepoPipelineResource(repo string, workflow string, config *model.Conf
 		revision = components[1]
 	}
 
-	inputparams := make([]pipeline.Param, 0)
+	inputparams := make([]pipeline.ResourceParam, 0)
 
-	inputparams = append(inputparams, pipeline.Param{
+	inputparams = append(inputparams, pipeline.ResourceParam{
 		Name:  "revision",
 		Value: revision,
 	})
 
-	inputparams = append(inputparams, pipeline.Param{
+	inputparams = append(inputparams, pipeline.ResourceParam{
 		Name:  "url",
 		Value: url,
 	})
 
 	resourcespec := pipeline.PipelineResourceSpec{
-		Type:   "git",
+		Type:   pipeline.PipelineResourceTypeGit,
 		Params: inputparams,
 	}
 	resource.Spec = resourcespec
@@ -707,16 +672,41 @@ func createBuildTask(image Image) pipeline.Task {
 	}
 
 	// CAB: The pathToDocker and pathToContext get set in the pipeline when calling taskRef
+	var inputResource pipeline.TaskResource
+	inputResource.Name = "workspace"
+	inputResource.Type = pipeline.PipelineResourceTypeGit
+
+	var outputResource pipeline.TaskResource
+	outputResource.Name = "image"
+	outputResource.Type = pipeline.PipelineResourceTypeImage
+
+	buildContainer := corev1.Container{
+		Name:    "build-and-push-" + convertName(image.BuildTaskName),
+		Image:   "gcr.io/kaniko-project/executor",
+		Command: []string{"/kaniko/executor"},
+		Args: []string{
+			"--dockerfile=${inputs.params.pathToDockerFile}",
+			"--destination=${outputs.resources.image.url}",
+			"--context=${inputs.params.pathToContext}",
+			"--insecure",
+			"--insecure-registry",
+			"--verbosity=debug", // DEBUG MODE
+		},
+	}
+
 	task.Spec = pipeline.TaskSpec{
 		Inputs: &pipeline.Inputs{
-			Resources: []pipeline.TaskResource{{
-				Name: "workspace",
-				Type: pipeline.PipelineResourceTypeGit,
-			}},
-			Params: []pipeline.TaskParam{
+			Resources: []pipeline.TaskResource{
+				inputResource,
+			},
+			Params: []pipeline.ParamSpec{
 				{
 					Name:    "pathToDockerFile",
-					Default: "Dockerfile",
+					Type: pipeline.ParamTypeString,
+					Default: &pipeline.ArrayOrString{
+						Type: pipeline.ParamTypeString,
+						StringVal: "Dockerfile",
+					},
 				},
 				{
 					Name: "pathToContext",
@@ -724,44 +714,33 @@ func createBuildTask(image Image) pipeline.Task {
 			},
 		},
 		Outputs: &pipeline.Outputs{
-			Resources: []pipeline.TaskResource{{
-				Name: "image",
-				Type: pipeline.PipelineResourceTypeImage,
-			}},
-		},
-		Steps: []corev1.Container{{
-			Name:    "build-and-push-" + convertName(image.BuildTaskName),
-			Image:   "gcr.io/kaniko-project/executor",
-			Command: []string{"/kaniko/executor"},
-			Args: []string{
-				"--dockerfile=${inputs.params.pathToDockerFile}",
-				"--destination=${outputs.resources.image.url}",
-				"--context=${inputs.params.pathToContext}",
-				"--insecure",
-				"--insecure-registry",
-				"--verbosity=debug", // DEBUG MODE
+			Resources: []pipeline.TaskResource{
+				outputResource,
 			},
+		},
+		Steps: []pipeline.Step{{
+			buildContainer,
 		}},
 	}
 
 	return task
 }
 
-func createContainer(task Task) corev1.Container {
+func createContainer(task Task) pipeline.Step {
 	// Need to be a little more intelligent with the Image.
 	path := task.Image.Path
 	if task.Image.Type != DOCKER {
 		path = registry + "/" + task.Image.PipelineResourceImage.Name
 	}
 
-	return corev1.Container{
+	return pipeline.Step{corev1.Container{
 		Name:    convertName(task.Identifier),
 		Image:   path,
 		Command: task.Cmd,
 		Args:    task.Args,
 		Env:     task.Envs,
 		EnvFrom: task.EnvFrom,
-	}
+	}}
 }
 
 func convertName(name string) string {

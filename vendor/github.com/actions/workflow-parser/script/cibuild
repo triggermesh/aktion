@@ -1,6 +1,0 @@
-#!/bin/sh -ex
-
-mkdir -p $GOPATH/src/github.com/actions
-ln -s $PWD $GOPATH/src/github.com/actions/workflow-parser
-cd $GOPATH/src/github.com/actions/workflow-parser
-make
