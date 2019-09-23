@@ -52,6 +52,16 @@ aktion launch --task knative-test --git sebgoa/cloudbuild
 
 This is heavily **Work In Progress** We would love your feedback on this tool so don't hesitate to let us know what is wrong and how we could improve it, just file an [issue](https://github.com/triggermesh/aktion/issues/new)
 
+## Building
+
+Requires a minimum of Go 1.12, [Go Dep](https://github.com/golang/dep), and GNU Make
+
+When cloning for the first time, or after modifying the Gopkg.toml file, run:
+
+    make dep
+
+Otherwise, `make build` will build `aktion`.
+
 ## Code of Conduct
 
 This plugin is by no means part of [CNCF](https://www.cncf.io/) but we abide by its [code of conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md)

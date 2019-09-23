@@ -1,6 +1,0 @@
-#!/bin/sh -ex
-
-mkdir -p $GOPATH/src/github.com/hashicorp
-ln -s $PWD $GOPATH/src/github.com/hashicorp/hcl
-cd $GOPATH/src/github.com/hashicorp/hcl
-make

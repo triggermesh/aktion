@@ -18,8 +18,7 @@ package client
 
 import (
 	"os"
-
-	pipelineApi "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	pipelineApi "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

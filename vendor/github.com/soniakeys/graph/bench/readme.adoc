@@ -1,7 +1,0 @@
-= Benchmarks
-
-This directory holds benchmark results showing performance over a wide range
-of graph sizes, and comparing results to theoretical predictions.
-
-Compared to the performance measures of the anecdote program, the benchmarks
-here perform repeated tests to more reliably capture typical performance.
