@@ -20,12 +20,10 @@ import (
 	"os"
 	"time"
 
-	//v1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
-	//tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	yaml "github.com/ghodss/yaml"
-	v1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
-	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	log "github.com/sirupsen/logrus"
+	v1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -132,10 +130,6 @@ func taskRunWithTaskRef(namespace string, taskRef string) v1alpha1.TaskRun {
 		Spec: v1alpha1.TaskRunSpec{
 			TaskRef: &v1alpha1.TaskRef{
 				Name: taskRef,
-			},
-			Trigger: v1alpha1.TaskTrigger{
-				Type: v1alpha1.TaskTriggerTypeManual,
-				Name: "manual",
 			},
 		},
 	}

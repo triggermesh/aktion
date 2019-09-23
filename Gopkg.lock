@@ -190,17 +190,6 @@
   version = "v1.1.7"
 
 [[projects]]
-  digest = "1:d3154c72b3404c53c2b29fa766959bccac0a04ed292e4d0a803bf02581e05750"
-  name = "github.com/knative/build-pipeline"
-  packages = [
-    "pkg/apis/pipeline/v1alpha1",
-    "pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
-  ]
-  pruneopts = ""
-  revision = "9ff6aca4b7aa1f573fb9ff2e0d7f868fa9467417"
-  version = "v0.7.0"
-
-[[projects]]
   digest = "1:2031ab7e72df0d9ce87ff77296a3d4839656a8dd429bbf3303a30efb168132c3"
   name = "github.com/knative/eventing-contrib"
   packages = ["github/pkg/apis/sources/v1alpha1"]
@@ -781,13 +770,12 @@
     "github.com/actions/workflow-parser/model",
     "github.com/actions/workflow-parser/parser",
     "github.com/ghodss/yaml",
-    "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1",
-    "github.com/knative/build-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
     "github.com/knative/eventing-contrib/github/pkg/apis/sources/v1alpha1",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1",
     "github.com/tektoncd/pipeline/pkg/client/clientset/versioned",
+    "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/client-go/kubernetes",
